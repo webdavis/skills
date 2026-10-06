@@ -12,8 +12,8 @@ same whatever the tool is written in.
 **Read a language skill alongside this one. Always.** This skill states what must be true; the
 language skill states how that is spelled and enforced in a particular toolchain:
 
-- **Rust**: `~/.agents/skills/clean-code-rust/SKILL.md`
-- **Swift**: `~/.agents/skills/clean-code-swift/SKILL.md`
+- **Rust**: the `clean-code-rust` skill (`../clean-code-rust/SKILL.md` beside this file)
+- **Swift**: the `clean-code-swift` skill (`../clean-code-swift/SKILL.md` beside this file)
 
 Those paths are the canonical store and resolve identically from Claude Code, Codex and hermes. Where
 this skill and a language skill disagree on a number or a mechanism, **the language skill wins**: it

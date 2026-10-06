@@ -5,7 +5,7 @@ description: "The Rust bindings of this repository's clean-code standard. Use wh
 
 # Clean code: Rust
 
-**Read `~/.agents/skills/clean-code/SKILL.md` first.** That skill carries the method: the
+**Read the `clean-code` skill first** (`../clean-code/SKILL.md` beside this file). That skill carries the method: the
 ordered ladder, the five module roles and their dependency direction, SOLID, the test obligations,
 the delivery ladder, the sol review, and the completion report. This file states only how those are
 spelled and enforced in Rust, and it wins wherever the two disagree on a number or a mechanism.
