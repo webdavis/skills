@@ -1,0 +1,16 @@
+{
+  "name": "webdavis",
+  "owner": {"name": "webdavis"},
+  "plugins": [
+    {
+      "name": "strategy",
+      "source": "./plugins/strategy",
+      "description": "The three slice pipelines: open-loop, closed-loop and orchestrator-loop."
+    },
+    {
+      "name": "clean-code",
+      "source": "./plugins/clean-code",
+      "description": "The clean-code architecture standard and its Rust and Swift bindings."
+    }
+  ]
+}

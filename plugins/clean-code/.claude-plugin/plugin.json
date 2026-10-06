@@ -1,0 +1,5 @@
+{
+  "name": "clean-code",
+  "description": "The clean-code architecture standard for the tools webdavis owns, with Rust and Swift bindings.",
+  "version": "0.1.0"
+}
