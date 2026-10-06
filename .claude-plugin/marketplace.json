@@ -7,7 +7,7 @@
     {
       "name": "strategy",
       "source": "./plugins/strategy",
-      "description": "The three slice pipelines: open-loop, closed-loop and orchestrator-loop."
+      "description": "Three slice pipelines (open-loop, closed-loop, orchestrator-loop) and the ledger that verifies them."
     },
     {
       "name": "clean-code",

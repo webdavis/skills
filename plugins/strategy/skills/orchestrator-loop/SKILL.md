@@ -1,187 +1,107 @@
 ---
 name: orchestrator-loop
 description: >-
-  Run a slice where the orchestrator is inside the loop, writing the failing tests and the seams
-  itself instead of briefing an implementer, with no deferred findings. Use when the behaviour can
-  be stated as a test, when a task says Strategy-B, or when the user says
-  "/strategy:orchestrator-loop".
+  Run a slice where the orchestrator writes the failing tests and the seams itself instead of a
+  prose brief, an implementer makes them green, parallel reviews and a terminal verification follow,
+  and every finding is fixed or accepted in this round. Use when the behavior can be stated as a
+  failing test before it can be stated as a paragraph, when a task says orchestrator-loop or
+  Strategy-B, or when the user says "/strategy:orchestrator-loop".
 ---
 
 # Orchestrator-loop
 
-**The ORCHESTRATOR is inside the loop.** In the other two it writes a brief and hands it to an
-implementer; here it writes the FAILING TESTS and the trait seams ITSELF, and those tests are the
-specification. There is no prose brief and no brief review, because a concrete failing test says what a
-paragraph of instructions only gestures at. The tests are the spec, the red state and the design in one
-artifact.
+You are inside the loop. In the other two loops you write a brief and hand it to an implementer;
+here you write the failing tests and the trait seams yourself, and those tests are the
+specification. There is no prose brief and no brief review, because a concrete failing test says what
+a paragraph only gestures at.
 
-**That is the only distinction.** Concurrency is not a second one: open-loop mandates parallel 4a and
-4b reviews too, and closed-loop inherits them. Who writes the tests is what separates this skill from
-its siblings.
+That is the only difference from [closed-loop](../closed-loop/SKILL.md). On the findings axis this
+loop is closed too: the register refuses `TASK`, every finding is fixed or accepted in this round, and
+6v is terminal. Choosing between the two is only a question of who writes the tests.
 
-**It is also closed-loop in the findings sense**: every finding is fixed in this iteration and none
-becomes a task. The three names do not sit on one axis. Two of them
-([open-loop](../open-loop/SKILL.md) and [closed-loop](../closed-loop/SKILL.md)) name what happens to a
-FINDING; this one names WHO is inside the loop, and on the findings axis it behaves like
-[closed-loop](../closed-loop/SKILL.md).
+Use it when the behavior can be stated as a test first. If you find yourself writing a paragraph of
+instructions for an implementer, you are running open-loop; say so and switch.
 
-## When to use this
+Read [ledger](../ledger/SKILL.md) first: the records, the evidence each row needs, the review-round
+rules and the roles. Nothing below repeats it.
 
-The behaviour can be stated as a failing test before it can be stated as a paragraph. If you find
-yourself writing a paragraph of instructions for an implementer instead, you want
-[open-loop](../open-loop/SKILL.md).
-
-On the findings axis this behaves exactly like [closed-loop](../closed-loop/SKILL.md): every finding is
-fixed in this iteration and none becomes a task. So choosing between the two is a question of who writes
-the tests, never a question of what happens to a finding.
-
-**This was called Strategy-B.** Unlike the other two it has no letter of its own: the verifier scripts
-take only `A` and `F`, and it runs the `F` ledgers, as below.
-
-This strategy exists because [open-loop](../open-loop/SKILL.md) was rejected as too slow and too heavy: a
-slice ran two to three hours and roughly a million tokens across four agent dispatches. This one runs
-about an hour.
-
-Read [the ledger grammar](../../ledger-grammar.md) before ticking anything.
-
-## It runs the ledgers as F
-
-The two verifier scripts know exactly two strategies, `A` and `F`. There is no third letter, so this
-one opens `F` ledgers and deviates the step it does not have:
+## Open the records before the first test exists
 
 ```bash
-~/.claude/pipeline/slice-checklist.sh  new <slug> F [--security] [dir]
-~/.claude/pipeline/findings-register.sh new <slug> F [dir]
+S=../ledger/scripts
+$S/slice-checklist.sh  new <slug> orchestrator [--security] <dir>
+$S/findings-register.sh new <slug> orchestrator [--security] <dir>
 ```
 
-- **Step 1** is not deviated. Its artifact here is the RED TEST COMMIT rather than a prose brief, so its
-  evidence is that commit sha.
-- **Step 2** is deviated. Mark its box `[DEV]`, put "no prose brief: the failing tests are the brief,
-  commit \<sha\>" in its EVIDENCE field, and repeat the reason under **Deviations**. A `[DEV]` box with
-  an unfilled evidence field fails exactly like an unticked one.
-- In the register's declared-verdicts table, set step 2's verdict to `n/a`. An `n/a` step must then
-  carry no finding rows, which is correct: a review that did not run found nothing.
-- Everything else the `F` ledgers require still applies, **including step 6v**. Dropping step 7 without
-  6v would leave the fix with nothing checking it at all.
+## The steps
 
-## The assumptions ledger, before the first test is written
+`$S/slice-checklist.sh steps orchestrator [--security]` prints the same table. There is no step 2:
+the table omits it rather than making you record a deviation for a review that was never meant to run.
 
-Here the tests ARE the spec, so a wrong assumption does not become a wrong paragraph. It becomes a wrong
-test that then passes. Confirm before writing red. Present a NUMBERED ledger as ONE batch:
+| step | what | leaves |
+| --- | --- | --- |
+| 1 | Write the failing tests and the seams, commit red | commit |
+| 3 | Implement test-first, mutation-verified against an unmutated control | commit |
+| 4a | Review correctness (read-only) | quoted verdict |
+| 4a-s | Review the security lens (`--security` only) | quoted verdict |
+| 4b | Review test quality and mutate, own worktree, fixes in place | quoted verdict |
+| 4c | Independent read by the orchestrator | notes path |
+| 5 | Adjudicate: reproduce every finding | the register |
+| 6 | Fix the 4a and 4c findings | commit |
+| 6v | Terminal verification: gates run, fixes in place, `PASS` or `FAIL` | quoted verdict |
+| 9 | Gates, push, PR, merge | PR number |
 
-```markdown
-## Assumptions ledger
+**Confirm the assumptions ledger before writing red.** Here a wrong assumption does not become a
+wrong paragraph; it becomes a wrong test that then passes.
 
-Confirm all, or name the numbers to change. Anything you do not name I treat as confirmed.
+**Step 1's evidence is the red commit.** The tests must fail on it for the reason the slice exists,
+not for a missing import: run them once and keep the failure output beside the ledgers.
 
-1. <assumption>, source: <path:line, the original implementation, or a convention>
-```
+**Step 3's implementer gets the tests, the argument log and nothing to decide about scope.** Where an
+original implementation exists it also ships a differential check against it.
 
-This is not the prose brief this strategy does without. It states what you already resolved from the
-tree so that no question is spent on it. The brief this skill rejects is a paragraph of instructions
-telling an implementer what to build.
-
-A REJECTED assumption becomes a question, asked one at a time, naming what it changes about the tests you
-are about to write. The ledger is presented ONCE, because dripping it out as individual questions is the
-waste it exists to prevent. Despite the name it is not one of the two verifier ledgers, and no script
-reads it. This ledger and the argument log below are both adapted from chaseai-yt/claudex-loop, MIT.
-
-## Per slice, in order
-
-1. **The orchestrator confirms the assumptions ledger**, in one batch, before any test exists.
-1. **The orchestrator writes the failing tests and the trait seams**, inline. Red first, always.
-1. **An implementer makes them green**, plus a differential check against the original implementation
-   wherever one exists.
-1. **sol reviews the diff at ULTRA on a TIGHT charter**, in parallel with a mutation-testing agent.
-   Same slice, SEPARATE worktrees: the mutating agent edits production code and reverts, so sharing one
-   worktree produces false SURVIVED results, and a false SURVIVED reads as a coverage gap that sends the
-   next round to plug a hole that does not exist.
-1. **The orchestrator adjudicates and appends the round to the argument log.** Before the fixes, not
-   after: the fix round reads that log, so writing it later leaves the first fix round without its input.
-1. **The findings are fixed BEFORE the next slice starts.** Nothing carries over.
-1. **The orchestrator pushes, waits for CI, and merges.**
-
-Budget, and re-forecast it against real numbers rather than letting the estimate drift: tests 10
-minutes, implement 15, sol and mutation in parallel 15, fixes 10, push and CI and merge 12.
-
-Independent slices MAY run in parallel; reliability is the bound rather than a fixed count, and each
-one carries its own checklist verified step by step. Parallel sol attempts are allowed, but if one
-fails while another runs, wait for the running one, restart the failed one after it, and run every
-subsequent sol review sequentially.
-
-## The argument log
-
-Adjudication appends each round to `argument-<slug>.md`, beside the two `F` ledgers, in the form
-[open-loop](../open-loop/SKILL.md) sets out: the finding identifiers and the reasoning only, pointing at
-the reviewer's output and the register for everything else.
-
-Two rounds here are unusually easy to lose. sol and the mutation agent run in PARALLEL on separate
-worktrees, so their arguments arrive interleaved and neither saw the other's, and the log is where the
-two become one record instead of two half-read reports. A restarted sol review, which this strategy
-allows after a failure, also comes back with no memory of the attempt it replaced, so its round is
-written when it is adjudicated rather than held.
-
-Read the existing entries before dispatching the implementer, before either review, before the fix round
-and before any restarted sol review. No script creates the file and no gate reads it.
+**Findings land before the next slice starts.** Independent slices may run in parallel, each with its
+own records; nothing carries over between them.
 
 ## The testing charter
 
-This is the part that makes the tests worth writing first. Hard-to-test code is read as a SOLID
-violation signal, not as a testing problem.
+Put this in the implementer's brief. Hard-to-test code is a design signal, not a testing problem.
 
-1. **Test through the PUBLIC interface, always.** Never make something public, and never reach into a
-   private piece, because it is easier to test. Internals are covered through the public surface.
-1. **Push the public interface itself toward VALUES** where that is honest: values in, plan out. Then a
-   zero-double test is legitimately a front-door test.
-1. **Where the public behaviour IS an effect, SPY the effect at the boundary.** Record what crossed the
-   seam and assert on that. Inputs are fed by thin one-method stubs.
-1. **A fake with behaviour in it is a design smell.** The double's complexity measures how badly the
-   boundary is placed: zero doubles, then a spy, then a thin stub, then a behavioural fake, worst last.
-   Heavy rigs stay confined to adapter tests.
+1. Test through the public interface only. Never make something public, or reach into a private
+   piece, to make a test easier.
+2. Push the public interface toward values where that is honest: values in, plan out. Then a test
+   with zero doubles is a front-door test.
+3. Where the public behavior is an effect, spy on it at the boundary: record what crossed the seam
+   and assert on that. Feed inputs through thin one-method stubs.
+4. The double's complexity measures how badly the boundary sits: zero doubles, then a spy, then a
+   thin stub, then a behavioral fake, worst last. Needing a fake with logic in it means stop and
+   reconsider the boundary: could a value be handed in, could the trait be narrower? Record the
+   decision either way.
 
-The tripwire for the implementer, and put it in the charter: needing a fake with LOGIC in it means STOP
-and reconsider the boundary. Could a value be handed in instead? Could the trait be narrower? Record the
-decision either way.
+Small in-scope seam refactors are allowed mid-slice, test-covered before the feature lands on them,
+and noted in the argument log. The outer tests that drive the real binary stay: a fully tested pure
+core with an untested composition root has been measured to survive that root's whole body being
+replaced by a constant.
 
-Mid-slice seam refactors are default-authorized when small and in scope, with the refactor test-covered
-before the feature lands on top. Say so in the slice log when you take one.
+## Budget
 
-The outer suites that drive the real binary stay load-bearing. They alone prove the wiring between the
-pure core and the edges, and a slice with a fully tested pure core and an untested composition root has
-been measured to survive having that composition function's whole body replaced by a constant.
+Forecast each step before starting (a typical slice: tests 10 minutes, implement 15, the two reviews in
+parallel 15, fixes 10, push and merge 12) and re-forecast against the measured numbers as they
+arrive. Review time scales with charter breadth and diff size, so a narrow charter on a small diff is
+minutes, not an hour; keep both small rather than budgeting around a wide one. When a step runs past
+twice its forecast, write why in the argument log before continuing.
 
-## Charter breadth is the dominant term
+## Exit test
 
-**sol at ultra, tight charter, 133-line file: 189 seconds, measured.** The review was real, not shallow:
-it found an option-injection case and a `"."` filename case in code that had already passed a full
-review, and ran its own mutants to confirm every test could fail.
+```bash
+$S/pipeline-merge.sh <pr> <slug> --repo <repo> --dir <dir>
+```
 
-The orchestrator had been estimating 25 to 40 minutes per sol review, from three samples that were all
-LARGE diffs with seven-part charters, and treating that as a constant. It is not. sol's time scales with
-charter breadth and diff size, and a narrow charter on a small diff is minutes. That one wrong
-assumption inflated every estimate by roughly ten times and was the entire reason the full pipeline
-looked infeasible.
-
-Standing lesson, and it generalises past this strategy: measure the dominant term before designing
-around it.
-
-One caveat on ultra: it spawns roughly four delegated agents, so for a small single-artifact diff the
-delegation may be pure overhead, and one continuous pass at max is better at CONNECTING facts across
-lenses. Untested. Worth an A/B if slices run long.
-
-## What this strategy does NOT do
-
-- **No prose brief and no brief review.** If you find yourself writing a paragraph of instructions for
-  an implementer, you are running [open-loop](../open-loop/SKILL.md) instead, and should say so.
-- **It creates no tasks.** It runs the `F` ledgers, and the register mechanically refuses a TASK
-  disposition. Findings are fixed in-round or accepted with a written rationale.
-- It has no step 7, so there is no second review of the fix and no fix-review loop.
-- It does not carry findings into the next slice. They land first.
+Exit 0 and a gate comment on the PR, or the slice is not done.
 
 ## The siblings
 
-- [open-loop](../open-loop/SKILL.md): all ten steps, a written brief that gets reviewed before any code
-  exists, and the only strategy whose findings may leave the loop as tasks.
-- [closed-loop](../closed-loop/SKILL.md): for work that exists BECAUSE a review found something. Same
-  findings discipline and the same `F` ledgers as this one, but the orchestrator is back outside the
-  loop: a real brief at step 1 and a real brief review at step 2.
+- [open-loop](../open-loop/SKILL.md): a written brief reviewed before any code, a re-review at step
+  7, and the only loop whose findings may leave as tasks.
+- [closed-loop](../closed-loop/SKILL.md): the same findings discipline and the same 6v, with you
+  back outside the loop: a real brief at step 1 and a real brief review at step 2.
