@@ -1,5 +1,5 @@
 ---
-name: tiktok-scraping-yt-dlp
+name: tiktok-crawling
 description: Use for TikTok crawling, content retrieval, and analysis
 ---
 

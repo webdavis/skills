@@ -1,0 +1,5 @@
+{
+  "name": "tiktok-crawling",
+  "description": "TikTok crawling, content retrieval and analysis with yt-dlp.",
+  "version": "0.1.0"
+}

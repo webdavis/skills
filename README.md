@@ -1,11 +1,42 @@
 # skills
 
-Agent skills and Claude Code plugins.
+Agent skills, each shipped as a Claude Code plugin so it installs the same way everywhere.
 
-- `plugins/strategy`: the three slice pipelines (open-loop, closed-loop, orchestrator-loop).
-- `plugins/clean-code`: the clean-code architecture standard and its Rust and Swift bindings.
-- `skills/tiktok-crawling`: TikTok crawling, content retrieval and analysis.
+| Plugin | Skills | What it is for |
+| --- | --- | --- |
+| `strategy` | `open-loop`, `closed-loop`, `orchestrator-loop` | The three slice pipelines work runs through |
+| `clean-code` | `clean-code`, `clean-code-rust`, `clean-code-swift` | The clean-code architecture standard and its language bindings |
+| `tiktok-crawling` | `tiktok-crawling` | TikTok crawling, content retrieval and analysis with yt-dlp |
 
-Install the plugins as the `webdavis` marketplace (`claude plugin marketplace add webdavis/skills`,
-`codex plugin marketplace add webdavis/skills`); install single skills with
-`npx skills@latest add webdavis/skills/<path>` or `hermes skills install webdavis/skills/<path>`.
+## Install
+
+Pick the route that fits your setup. Every skill lives at `plugins/<plugin>/skills/<skill>/SKILL.md`.
+
+**Claude Code** (plugins, namespaced as `/<plugin>:<skill>`):
+
+```sh
+claude plugin marketplace add webdavis/skills
+claude plugin install clean-code@webdavis
+```
+
+**Codex** (same marketplace file):
+
+```sh
+codex plugin marketplace add webdavis/skills
+codex plugin add clean-code@webdavis
+```
+
+**skills CLI** (any agent it supports; the whole repo, one plugin, or one skill):
+
+```sh
+npx skills@latest add webdavis/skills
+npx skills@latest add webdavis/skills/plugins/clean-code
+npx skills@latest add webdavis/skills/plugins/tiktok-crawling/skills/tiktok-crawling
+```
+
+**Hermes Agent** (one skill at a time, by path):
+
+```sh
+hermes skills install webdavis/skills/plugins/clean-code/skills/clean-code
+hermes skills install webdavis/skills/plugins/tiktok-crawling/skills/tiktok-crawling
+```

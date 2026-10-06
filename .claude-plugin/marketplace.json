@@ -1,6 +1,8 @@
 {
   "name": "webdavis",
-  "owner": {"name": "webdavis"},
+  "owner": {
+    "name": "webdavis"
+  },
   "plugins": [
     {
       "name": "strategy",
@@ -11,6 +13,11 @@
       "name": "clean-code",
       "source": "./plugins/clean-code",
       "description": "The clean-code architecture standard and its Rust and Swift bindings."
+    },
+    {
+      "name": "tiktok-crawling",
+      "source": "./plugins/tiktok-crawling",
+      "description": "TikTok crawling, content retrieval and analysis with yt-dlp."
     }
   ]
 }
