@@ -113,8 +113,18 @@ expect pass "4b verdict now declares the row" "$here/findings-register.sh" verif
 add_row "$rg" "F5 | 7 | LOW | comment typo | FIXED | $sha"
 sed -i '' 's/| 7 | VERDICT: NO_ISSUE |/| 7 | 1 finding |/' "$rg"
 expect fail "FIXED without a named test and transition" "$here/findings-register.sh" verify "$rg" --repo "$repo" --tasks "$ledgers/tasks.txt"
+sed -i '' "s/| F5 | 7 | LOW | comment typo | FIXED | $sha |/| F5 | 7 | LOW | comment typo | FIXED | $sha sum.sh RED then GREEN |/" "$rg"
+expect fail "a production file is not a named test" "$here/findings-register.sh" verify "$rg" --repo "$repo" --tasks "$ledgers/tasks.txt"
+sed -i '' "s/| F5 | 7 | LOW | comment typo | FIXED | $sha sum.sh RED then GREEN |/| F5 | 7 | LOW | comment typo | FIXED | $sha |/" "$rg"
 sed -i '' "s/| F5 | 7 | LOW | comment typo | FIXED | $sha |/| F5 | 7 | LOW | comment typo | FIXED-NOTEST | $sha, a comment; no test can see it |/" "$rg"
 expect pass "FIXED-NOTEST with a reason" "$here/findings-register.sh" verify "$rg" --repo "$repo" --tasks "$ledgers/tasks.txt"
+sed -i '' 's/^| 2 | VERDICT: NO_ISSUE |$/| 2 | FINDINGS (1) |/' "$rg"
+add_row "$rg" "F6 | 2 | LOW | brief gap | FIXED-NOTEST | fixed in the brief; no test"
+expect fail "a step 2 FIXED-NOTEST without the brief path" "$here/findings-register.sh" verify "$rg" --repo "$repo" --tasks "$ledgers/tasks.txt"
+sed -i '' 's/| F6 | 2 | LOW | brief gap | FIXED-NOTEST | fixed in the brief; no test |/| F6 | 2 | LOW | brief gap | FIXED-NOTEST | brief.md, fixed in the brief; no test |/' "$rg"
+expect pass "a step 2 FIXED-NOTEST citing the brief" "$here/findings-register.sh" verify "$rg" --repo "$repo" --tasks "$ledgers/tasks.txt"
+sed -i '' '/^| F6 | 2 |/d' "$rg"
+sed -i '' 's/^| 2 | FINDINGS (1) |$/| 2 | VERDICT: NO_ISSUE |/' "$rg"
 
 # --- register, open loop: which rows may defer ---
 printf '#8 later\n' >>"$ledgers/tasks.txt"

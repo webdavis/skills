@@ -23,7 +23,7 @@ rules and the roles. Nothing below repeats it.
 ## Open the records at step 1, before any code exists
 
 ```bash
-S=../ledger/scripts
+S=<the strategy plugin>/skills/ledger/scripts
 $S/slice-checklist.sh  new <slug> open [--security] <dir>
 $S/findings-register.sh new <slug> open [--security] <dir>
 ```
@@ -47,16 +47,9 @@ $S/findings-register.sh new <slug> open [--security] <dir>
 | 8 | Open findings become tasks | task numbers, or `none` |
 | 9 | Gates, push, PR, merge | PR number |
 
-**Step 1 and step 3 never happen in one action.** The logged brief is what creates the gap step 2 runs
-in. The brief is a hypothesis: step 2 re-measures every file and line it cites with
-`git show origin/main:<path> | grep -n` and says where it is wrong, so nobody builds against a stale
-address.
-
-**Step 3 ships a differential test** when the slice models an external tool's behavior: run a corpus
-through the real binary and assert the two readings match. Where the real tool can be asked instead of
-modelled, ask it and skip the problem.
-
-**Step 7 runs once.** A second fix round does not earn a second review; what step 7 still finds is
+**Step 7 runs once** and reviews every fix the slice made, wherever it landed (step 6, 4b in place);
+when no fix commit exists it is `[DEV] nothing to re-review`. A second fix round does not earn a
+second review; what step 7 still finds is
 adjudicated at step 8 like any other finding. That bound, plus the register's deferral rules, is what
 makes this loop terminate.
 
@@ -77,8 +70,8 @@ step 5 first: reproduce the finding before accepting or deferring it.
 $S/pipeline-merge.sh <pr> <slug> --repo <repo> --dir <dir> [--tasks <file>]
 ```
 
-Tick step 9 with the PR number as soon as the PR is open; the gate verifies the records before the
-merge and refuses an unticked row. Exit 0 and a gate comment on the PR, or the slice is not done.
+Open the PR, tick step 9 with its number, run the gate (it refuses an unticked row), merge, then add
+the merge sha to the cell. Exit 0 and a gate comment on the PR, or the slice is not done.
 
 ## The siblings
 

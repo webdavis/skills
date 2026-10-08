@@ -85,6 +85,7 @@ commit_resolves() {
 path_exists() {
   local evidence=$1 dir=$2 candidate
   for candidate in $evidence; do
+    candidate=${candidate%[,.;:]}
     case $candidate in
       /*) [[ -e $candidate ]] && return 0 ;;
       */* | *.md | *.txt | *.sh) [[ -e $dir/$candidate ]] && return 0 ;;

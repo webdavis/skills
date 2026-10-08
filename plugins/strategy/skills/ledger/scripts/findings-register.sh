@@ -7,7 +7,7 @@
 #
 # Rows start with "| F". Severity is CRITICAL, HIGH, MEDIUM or LOW. Dispositions:
 #   FIXED         a commit that resolves + a named test + "RED ... GREEN" or "SURVIVED ... KILLED"
-#   FIXED-NOTEST  a commit that resolves + why no test closes it (no test, untestable, measured)
+#   FIXED-NOTEST  a commit that resolves (a step 2 row: the brief's path) + why no test closes it
 #   ACCEPTED      a written rationale
 #   TASK #<n>     open loop only, never for a 4a-s or 4b row, never above MEDIUM; <n> must
 #                 appear in the --tasks manifest
@@ -48,7 +48,7 @@ new_register() {
 }
 
 named_test() {
-  grep -qE '(^|[ (])(test/|tests/|spec/)[^ ]+|\.(sh|bats|rs|py|ts|js|swift)\b|\btest [a-zA-Z_][a-zA-Z0-9_:]*|\btest "[^"]+"' <<<"$1"
+  grep -qE '(^|[ (])(test/|tests/|spec/)[^ ]+|[^ ]*(test|spec)[^ ]*\.(sh|bats|rs|py|ts|js|swift)\b|\btest [a-zA-Z_][a-zA-Z0-9_:]*|\btest "[^"]+"' <<<"$1"
 }
 
 transition() {
@@ -125,10 +125,10 @@ verify_register() {
         fixed=$((fixed + 1))
         ;;
       FIXED-NOTEST)
-        commit_resolves "$evidence" "$repo" || {
-          fail_line "$id: FIXED-NOTEST without a commit that resolves"
+        if ! commit_resolves "$evidence" "$repo" && ! { [[ $step == 2 ]] && path_exists "$evidence" "$(dirname "$file")"; }; then
+          fail_line "$id: FIXED-NOTEST without a commit that resolves (a step 2 row may cite the brief's path)"
           failures=$((failures + 1))
-        }
+        fi
         no_test_reason "$evidence" || {
           fail_line "$id: FIXED-NOTEST without saying why no test closes it"
           failures=$((failures + 1))
@@ -150,7 +150,7 @@ verify_register() {
         elif [[ -z $tasks ]]; then
           fail_line "$id: defers to TASK #$n but no --tasks manifest was given"
           failures=$((failures + 1))
-        elif ! grep -qE "(^|[^0-9])#?$n([^0-9]|$)" "$tasks"; then
+        elif ! grep -qE "(^|[[:space:]])#$n([^0-9]|$)" "$tasks"; then
           fail_line "$id: TASK #$n is not in $tasks"
           failures=$((failures + 1))
         fi

@@ -28,7 +28,7 @@ rules and the roles. Nothing below repeats it.
 ## Open the records before the first test exists
 
 ```bash
-S=../ledger/scripts
+S=<the strategy plugin>/skills/ledger/scripts
 $S/slice-checklist.sh  new <slug> orchestrator [--security] <dir>
 $S/findings-register.sh new <slug> orchestrator [--security] <dir>
 ```
@@ -86,13 +86,10 @@ replaced by a constant.
 
 ## Budget
 
-Forecast each step before starting and write the forecasts in the argument log (a typical
-multi-agent slice: tests 10 minutes, implement 15, the reviews 15 in parallel, 4c and adjudication 5
-each, fixes 10, 6v 5, push and merge 12; a change under twenty production lines takes about a tenth of
-that). Re-forecast against the measured
-numbers as they arrive. Review time scales with charter breadth and diff size, so a narrow charter on
-a small diff is minutes, not an hour. Twice the forecast stops the step: record the deviation and move
-on, as [ledger](../ledger/SKILL.md) says under Bounds.
+Forecast each step before starting, as [ledger](../ledger/SKILL.md) says under Bounds; this loop has
+no brief steps, so those numbers fall away. Re-forecast against the measured numbers as they arrive.
+Review time scales with charter breadth and diff size, so a narrow charter on a small diff is minutes,
+not an hour. Twice the forecast stops the step: record the deviation and move on.
 
 ## Exit test
 
@@ -100,8 +97,8 @@ on, as [ledger](../ledger/SKILL.md) says under Bounds.
 $S/pipeline-merge.sh <pr> <slug> --repo <repo> --dir <dir>
 ```
 
-Tick step 9 with the PR number as soon as the PR is open; the gate verifies the records before the
-merge and refuses an unticked row. Exit 0 and a gate comment on the PR, or the slice is not done.
+Open the PR, tick step 9 with its number, run the gate (it refuses an unticked row), merge, then add
+the merge sha to the cell. Exit 0 and a gate comment on the PR, or the slice is not done.
 
 ## The siblings
 
