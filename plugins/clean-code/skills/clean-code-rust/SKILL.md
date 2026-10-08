@@ -59,7 +59,7 @@ piece. The completion report carries the command's full output.
 
 ## The workspace
 
-Five roles, five crates, one Cargo workspace:
+Five roles. A tool over about 1,000 production lines takes five crates in one Cargo workspace:
 
     crates/<tool>-domain
     crates/<tool>-application
@@ -67,12 +67,22 @@ Five roles, five crates, one Cargo workspace:
     crates/<tool>-adapters
     crates/<tool>-cli          # [[bin]] name = "<tool>", because callers invoke it by that name
 
+Under that size the tool is one crate with one module per role (`domain`, `application`, `protocol`,
+`adapters`, `cli`), the same edges held by `pub(crate)` visibility and a test that fails when the
+domain module names `std::fs`, `std::env`, `std::process` or a crate outside `std`. The module map
+says which form the tool takes; a module becomes a crate when it passes the hard limit or a second
+binary or consumer needs it on its own. An eval run split a 110-line CLI into five crates and a
+test-support crate because this page once said "five crates" with no condition.
+
 **`Cargo.toml` is the enforcer.** A crate can only `use` what its own `[dependencies]` names, so an
 inward dependency from domain or application code to an adapter fails to compile. A declared cycle is
 refused outright. Pin the direction with one test in the domain crate that reads its own `Cargo.toml`
 and fails if any non-dev dependency appears; that is the exit checklist's "manifest test". Commit
 `Cargo.lock` and build `--locked`. Pin `channel = "stable"` in `rust-toolchain.toml` so a plain `cargo`
-runs the same toolchain everywhere.
+runs the same toolchain everywhere. The exit checklist's boundary command is the edge list
+`cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | .name as $n | .dependencies[] |
+select(.kind == null) | "\($n) -> \(.name)"' | sort` diffed against the module map, plus
+`cargo check --workspace --all-targets --locked`; in the one-crate form it is the domain import test.
 
 The domain crate excludes filesystem access, SQLite, TOML, JSON, HTTP, environment variables,
 process spawning, platform APIs, vendor APIs, executable discovery and CLI output. `std` only, unless
@@ -135,11 +145,22 @@ behavior, written before the move if none exists; every changed behavior gets a 
 Unit tests live beside their implementation under `#[cfg(test)] mod tests;`; a large module may live
 in a private child file (`src/x.rs` beside `src/x/tests.rs`), still `cfg(test)`, still not shipped.
 
+The speed gate's numbers: budget 250 ms, ceiling 1 s. Stable `cargo test` has no per-test timer, so
+the support module exposes a guard (`let _gate = SpeedGate::start();`) that every test opens, and
+the completion report shows the grep that counts one guard per test. A contract suite shared by two
+implementations is a `pub` module of the crate that owns the port, behind a `contract-suite` feature
+the adapter crates enable as a dev-dependency.
+
+Take the baseline without touching the real home: `cargo test --no-run`, then run each test binary
+under `target/debug/deps` with `env -i HOME=<throwaway> PATH=$PATH`. `HOME=<x> cargo test` does not
+work, because rustup resolves the toolchain from `HOME`; an eval run wrote to the real `~/.tally`
+that way.
+
 Tooling: if `cargo mutants` is installed, run it on the changed crates and paste the summary as the
 mutation table's evidence, with the control being its baseline run; otherwise produce the rows by
 hand. Add `proptest` only after naming the input space it covers better than examples do. Miri, when
-available, is local evidence, not a gate. `cargo test --workspace` runs crates in parallel on one CPU,
-so measure the speed gate under that configuration.
+available, is local evidence, not a gate. Cargo runs test binaries one after another and the tests
+inside a binary in parallel; measure the speed gate under the default `cargo test --workspace`.
 
 ## Gates
 

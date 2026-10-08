@@ -60,7 +60,9 @@ measuring sticks for the exit checklist; without them "done" is an opinion.
    each non-obvious choice under `docs/decisions/`, both inside the package so they move with it.
 3. **The consumer list**: every caller outside the tool's folder (build scripts, task runners, sibling
    packages, generated files, the command-line surface), each with what may change, what stays
-   fixed, and the command that proves it. Prove by running the command, never by reading.
+   fixed, and the command that proves it. Prove by running the command, never by reading. The frozen
+   surface is what this list proves; an accidental behavior no consumer parses (a panic's banner, an
+   unformatted message) may change, with a decision record saying so.
 
 Name modules and types from the source's own vocabulary. Where a circulated glossary and the code
 disagree, the code wins. `manager`, `handler`, `service`, `utils`, `common` and `misc` are allowed
@@ -73,13 +75,15 @@ recording it as a decision.
 
 ## The procedure
 
-Each step ends in a named artifact. A step without its artifact did not happen.
+Each step ends in a named artifact. A step without its artifact did not happen. A step with nothing to
+do for this tool (no protocol, no plugins) is recorded as such in a decision record, which is then its
+artifact.
 
 | step | work | artifact |
 | --- | --- | --- |
 | 1 | Record the baseline suite and the consumer list | the two documents above |
 | 2 | Classify every test: permanent contract, adapter contract, obsolete mechanism test, migration test | the test mapping |
-| 3 | Create the units and their declared edges; update every consumer in the same PR | the build passes with the map's edges and no others |
+| 3 | Create each unit in the PR that gives it code, with its declared edges; update every consumer in the same PR | the build passes with the map's edges and no others |
 | 4 | Move pure policy into the domain unit | domain builds with no infrastructure dependency |
 | 5 | Define use cases and the ports they own; define the versioned protocols test-first | protocol fixtures per version |
 | 6 | Reimplement the legacy entry points as adapters over the use cases | the legacy tests pass through the adapters |

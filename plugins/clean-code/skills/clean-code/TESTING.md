@@ -35,7 +35,8 @@ installed the language skill says how to run it; otherwise the rows are produced
 version has five failure modes to check by name:
 
 - **A probe that never proves its edit landed.** Assert the mutated bytes are on disk before trusting
-  the result; otherwise the control has been run twice.
+  the result; otherwise the control has been run twice. A build cache keyed on mtimes (cargo) reuses
+  the previous mutant's artifact after a restore that keeps old mtimes: touch every restored file.
 - **A mutant that hangs instead of failing.** A test that blocks on a thread, socket, pipe or child
   has a failure mode that is not red but never finishing. Give every such test a deadline, and
   mutation-verify by making the subject hang, not only by making it answer wrongly.
