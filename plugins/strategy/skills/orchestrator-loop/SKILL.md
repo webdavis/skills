@@ -65,7 +65,8 @@ own records; nothing carries over between them.
 
 ## The testing charter
 
-Put this in the implementer's brief. Hard-to-test code is a design signal, not a testing problem.
+Hand this to the implementer with the tests. Hard-to-test code is a design signal, not a testing
+problem.
 
 1. Test through the public interface only. Never make something public, or reach into a private
    piece, to make a test easier.
@@ -86,8 +87,9 @@ replaced by a constant.
 ## Budget
 
 Forecast each step before starting and write the forecasts in the argument log (a typical
-multi-agent slice: tests 10 minutes, implement 15, the two reviews in parallel 15, fixes 10, push and
-merge 12; a change under twenty lines takes about a tenth of that). Re-forecast against the measured
+multi-agent slice: tests 10 minutes, implement 15, the reviews 15 in parallel, 4c and adjudication 5
+each, fixes 10, 6v 5, push and merge 12; a change under twenty production lines takes about a tenth of
+that). Re-forecast against the measured
 numbers as they arrive. Review time scales with charter breadth and diff size, so a narrow charter on
 a small diff is minutes, not an hour. Twice the forecast stops the step: record the deviation and move
 on, as [ledger](../ledger/SKILL.md) says under Bounds.
@@ -98,7 +100,8 @@ on, as [ledger](../ledger/SKILL.md) says under Bounds.
 $S/pipeline-merge.sh <pr> <slug> --repo <repo> --dir <dir>
 ```
 
-Exit 0 and a gate comment on the PR, or the slice is not done.
+Tick step 9 with the PR number as soon as the PR is open; the gate verifies the records before the
+merge and refuses an unticked row. Exit 0 and a gate comment on the PR, or the slice is not done.
 
 ## The siblings
 

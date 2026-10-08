@@ -55,7 +55,7 @@ main() {
 
   # shellcheck disable=SC2016  # the backticks are a markdown code fence, not a command
   gh pr comment "$pr" --repo "$(git -C "$repo" remote get-url origin)" --body "$(printf 'Slice %s gates:\n\n```\n%s\n```\n' "$slug" "$output")" >/dev/null
-  printf '\nGates passed and posted on PR %s. Merge with:\n  gh pr merge %s --squash --delete-branch\n' "$pr" "$pr"
+  printf '\nGates passed and posted on PR %s. Merge with:\n  gh pr merge %s --merge --delete-branch\n' "$pr" "$pr"
 }
 
 main "$@"

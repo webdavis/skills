@@ -77,7 +77,8 @@ step 5 first: reproduce the finding before accepting or deferring it.
 $S/pipeline-merge.sh <pr> <slug> --repo <repo> --dir <dir> [--tasks <file>]
 ```
 
-Exit 0 and a gate comment on the PR, or the slice is not done.
+Tick step 9 with the PR number as soon as the PR is open; the gate verifies the records before the
+merge and refuses an unticked row. Exit 0 and a gate comment on the PR, or the slice is not done.
 
 ## The siblings
 

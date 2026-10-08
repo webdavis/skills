@@ -69,7 +69,8 @@ argument-log round when it returns, because nothing runs after it to write one.
 $S/pipeline-merge.sh <pr> <slug> --repo <repo> --dir <dir>
 ```
 
-Exit 0 and a gate comment on the PR, or the slice is not done. There is no `--tasks` manifest: a
+Tick step 9 with the PR number as soon as the PR is open; the gate verifies the records before the
+merge and refuses an unticked row. Exit 0 and a gate comment on the PR, or the slice is not done. There is no `--tasks` manifest: a
 closed slice has nothing to put in one.
 
 ## The siblings

@@ -54,7 +54,9 @@ a completed review nobody opened. An agent id, a transcript id or the word "clea
 
 A step may be skipped only as a **deviation**: mark the box `[DEV]`, write the reason in its evidence
 cell, and repeat the reason as a line under `## Deviations` that names the step. A `[DEV]` with an
-empty evidence cell fails exactly like an unticked box. A missing row fails too.
+empty evidence cell fails exactly like an unticked box. A missing row fails too. A fix step with
+nothing to fix is recorded the same way, reason `nothing to fix`: a clean round is the expected one,
+and the deviation only says that the commit the row would cite does not exist.
 
 ## The register
 
@@ -77,8 +79,9 @@ closed and orchestrator loops (every finding is fixed or accepted in this round)
 step 2, 4a, 4c or 7.
 
 The **Declared verdicts** table quotes each review step's verdict as returned. The verifier reads a
-count out of it (`CLEAN`, `NO_ISSUE` or `VERDICT: PASS` is zero; otherwise the first `(N)`, otherwise
-the first `N finding`) and compares it with the rows that cite the step. `FINDINGS (5)` against three
+count out of it (the first `(N)`, otherwise the first `N finding`, otherwise zero for `CLEAN`,
+`NO_ISSUE` or `VERDICT: PASS`, so `VERDICT: PASS (1)` reads 1) and compares it with the rows that
+cite the step. `FINDINGS (5)` against three
 rows means two findings vanished on the way to the ledger, and the gate says so. `FAIL` never reads as
 zero. `n/a` means the review did not run, and then no row may cite it. A verdict it cannot read fails,
 so carry the count beside prose (`3 findings`).
@@ -94,9 +97,9 @@ critique and the proof already live in the reviewer's output and the register, a
 disagree with the first:
 
 ```markdown
-## Round <n>, step <2|4a|4a-s|4b|7|6v>
+## Round <n>, step <2|5|7|6v>
 
-Reviewer output: <path>. Dispositions and evidence: `findings-<slug>.md`.
+Reviewer outputs: <paths>. Dispositions and evidence: `findings-<slug>.md`.
 
 - F<n>: <why it holds, why it does not, or why it can wait, in your own words>
 ```
@@ -122,7 +125,8 @@ Confirm all, or name the numbers to change. Anything you do not name I treat as 
 ```
 
 An assumption with no source is a question; ask it instead. A rejected assumption becomes one question
-at a time, naming what it changes. Present the ledger once. No script reads it. This ledger and the
+at a time, naming what it changes. Present the ledger once. When nobody can answer (an unattended
+run), the rule above stands and everything is confirmed; say so under `## Deviations`. No script reads it. This ledger and the
 argument log are adapted from chaseai-yt/claudex-loop (MIT).
 
 ## Rules every review round follows
@@ -150,6 +154,9 @@ These are what make a register row worth recording.
 - **Every fixer answers in writing:** does anything I added admit the state I was fixing, or its
   mirror, or assert something I did not measure? When a fix replaces a check rather than adding one,
   list what the old check caught that the new one does not.
+- **Step 5 reproduces a finding on the commit it was found on.** A 4b finding is already fixed when
+  it reaches adjudication; reproduce it against the commit 4b started from (`SURVIVED` there,
+  `KILLED` on the fix), not against the branch head, where it cannot show.
 - **A review is one pass over the diff.** It ends when every added or changed line has been read
   against the charter, and its output is one findings table plus the verdict line, about a screen.
   Other interpreter versions, locales, fuzzing and probe scripts are out of scope unless the brief
@@ -162,8 +169,10 @@ A slice has a length, and the length is written down before the work starts, bec
 correct" has no natural end.
 
 - **Forecast every step** in the argument log before step 1 (minutes per step, as the loop skill's
-  table suggests, scaled to the diff: a change under twenty lines takes about a tenth of the typical
-  numbers). Write the actual beside each forecast as the step ends.
+  table suggests, scaled to the diff: a change under twenty production lines takes about a tenth of
+  the typical numbers; one agent runs the parallel steps in sequence, so its forecast is their sum).
+  Write the actual beside each forecast as the step ends. A step starts when the previous one ends;
+  reading the skills and the repository before step 1 is no step and is not forecast.
 - **Twice the forecast stops the step.** Record what was done and what was not as a `[DEV]` with the
   reason, and move on; the checklist accepts the deviation and the next step reads it. Never extend a
   step because it feels nearly finished.
@@ -196,4 +205,6 @@ ends.
 
 `pipeline-merge.sh` runs both verifiers, refuses on either, and on success posts their output as a
 comment on the PR and prints the merge command. It never merges for you. The comment is the artifact:
-a PR merged around the gate is visible afterwards by carrying none.
+a PR merged around the gate is visible afterwards by carrying none. The command is a merge commit,
+not a squash, so every sha the records cite stays on `main` and the verifiers can be rerun from a
+clone.
