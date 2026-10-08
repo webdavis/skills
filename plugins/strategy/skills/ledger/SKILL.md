@@ -171,7 +171,8 @@ These are what make a register row worth recording.
 - **Code quality is reported separately and ranked below correctness** in every charter, so a
   structure nit never outranks a missed defect. It is adjudicated the same way: fixed, or accepted
   with a rationale.
-- **Every fixer (steps 3, 4b, 6, 6v) answers in writing, in the argument log under its step:** does anything I added admit the state I was fixing, or its
+- **Every fixer (steps 3, 4b, 6, 6v) answers in writing, in the argument log under its step:** does
+  anything I added admit the state I was fixing, or its
   mirror, or assert something I did not measure? When a fix replaces a check rather than adding one,
   list what the old check caught that the new one does not.
 - **Step 5 reproduces a finding on the commit it was found on.** A 4b finding is already fixed when

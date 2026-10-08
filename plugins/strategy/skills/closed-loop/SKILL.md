@@ -64,7 +64,8 @@ the gates with the output pasted, and fixes in place what it finds. It may not d
 reviews it, which is what makes it terminal.
 
 Its vocabulary is `VERDICT: PASS`, `VERDICT: PASS (N)` when it fixed N in place (N rows cite 6v), or
-`VERDICT: FAIL`. `PASS` alone reconciles as zero findings; `FAIL` never reads as clean, so a failed verification cannot slip through as a clean one. 6v writes its own
+`VERDICT: FAIL`. `PASS` alone reconciles as zero findings; `FAIL` never reads as clean, so a failed
+verification cannot slip through as a clean one. 6v writes its own
 argument-log round when it returns, because nothing runs after it to write one.
 
 ## Exit test
