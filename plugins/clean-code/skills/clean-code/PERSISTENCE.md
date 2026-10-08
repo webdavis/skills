@@ -4,156 +4,98 @@ Where durable state lives and how it survives a crash. Reference for [`SKILL.md`
 
 ## Classify the state before choosing a store
 
-Derive the state inventory **yourself, from the source**. An inventory you were handed is not
-evidence: one circulated for `pns` carried four test-fixture names in it. Grep for every path the
-code writes, then classify each as:
-
-1. a public or external contract
-2. an internal persistence detail
-3. a temporary process-coordination mechanism
-4. a compatibility artifact
-
-Look for two things the classification usually surfaces. **Deletion targets**: names a sweep removes
-on every tick and never reads, which are legacy debris rather than state. And **orphans**: a name
-nothing in the source writes, or one nothing reads outside tests.
-
-Implement migration for durable user state that should survive. Do not silently discard existing
-state.
+Derive the state inventory from the source: grep for every path the code writes, then classify each
+as a public or external contract, an internal persistence detail, a temporary process-coordination
+mechanism, or a compatibility artifact. An inventory you were handed is not evidence; check every
+name against the code. The classification usually surfaces deletion targets (names a sweep removes on
+every tick and never reads) and orphans (names nothing writes, or nothing reads outside tests).
+Migrate durable user state that should survive; never discard existing state silently.
 
 ## SQLite or the filesystem
 
-Replace internal durable multi-record state with a transactional SQLite adapter **unless the
-filesystem path, name, metadata, or existence is itself an external integration contract**. SQLite is
-the right store for a same-host, low-volume, multiprocess workload, in WAL mode, with **every caller
-handling a busy database with a bounded timeout**. Prefer a synchronous driver over an asynchronous
-database layer unless a runtime requirement proves otherwise.
+Internal durable multi-record state goes into a transactional SQLite adapter unless the filesystem
+path, name, metadata or existence is itself an external contract. SQLite fits a same-host, low-volume,
+multiprocess workload: WAL mode, versioned migrations, explicit transactions, bounded busy timeouts
+handled by every caller, restrictive file permissions, typed codecs, crash-recovery and contention
+tests. A synchronous driver unless a runtime requirement proves otherwise.
 
-Use versioned migrations, explicit transactions, WAL mode where appropriate, bounded busy timeouts,
-restrictive database permissions, typed codecs, crash-recovery tests, and multiprocess contention
-tests.
+Semantic repositories, not one generic state store: one per family of records, named for what it
+holds. One SQLite type may implement several application-owned repository interfaces. Provide an
+in-memory implementation for fast tests and run the same contract suite against both.
 
-Create **semantic repositories, not one generic state store**: one per family of records, named for
-what it holds. One SQLite type may implement several application-owned repository interfaces. Provide
-in-memory implementations for fast application and contract tests, and run the same contract suite
-against both.
+Two filesystem facts bind any protocol that stays on disk. **Concurrent `unlink` does not arbitrate**:
+it reports success to every racer, so ownership is taken by rename or by `O_EXCL` creation, never by
+removal. **Writers are many processes**: short-lived hooks, a daemon, a shell notifier, another
+tool's alert path. Name the writers of each state family before choosing its store.
 
-### Two facts that shaped the existing filesystem protocols, and still bind
+A side channel never fails the work it reports on, so on the delivery path a busy, locked, missing or
+corrupt database is fail-open: deliver, and record the miss where recording is possible. State
+mutation is fail-closed. Write this down as a decision before the first database code lands.
 
-**Concurrent `unlink` does not arbitrate on this filesystem.** It reports success to every racer. Any
-filesystem protocol that remains owns a file **by rename or by `O_EXCL` creation, never by removal**.
-
-**Writers are many processes, not one.** Every hook is a short-lived process fired by a harness, a
-daemon is one long-lived process, a shell notifier and a sibling tool's alert path are more. Name the
-writers for each state family before choosing its store.
-
-**A side-channel must never fail the work it reports on.** So on the delivery path a busy, locked,
-missing or corrupt database is **fail-open**: deliver, and record the miss where recording is
-possible. State mutation is **fail-closed**. Write this as a decision record before the first SQLite
-code lands.
-
-### Where the filesystem stays
-
-Keep filesystem adapters where the filesystem genuinely is the interface: configuration files,
-executable discovery, operating-system files and terminal metadata, markers a third party observes,
-configuration publication and backups, and compatibility state external tools consume.
-
-Do not collapse atomic publish, append, claim, lease and marker behavior into a vague `FileStore`
-abstraction. Where a filesystem protocol remains, **name its semantic operation and test its actual
-race behavior.**
+The filesystem stays where it is the interface: configuration files, executable discovery,
+operating-system and terminal metadata, markers a third party observes, configuration publication and
+backups, compatibility state external tools consume. Where it stays, name the semantic operation
+(atomic publish, append, claim, lease, marker) and test its race behavior; never collapse them into a
+vague `FileStore`.
 
 ## Delivery safety
 
-For a tool that sends things outward, five rules. They are one mechanism, not five features.
+Five rules, one mechanism:
 
-**One idempotency key per event, minted at creation.** Carry it in the body and in an
-`Idempotency-Key` header, and **a replay carries the ORIGINAL key, never a fresh one**. The argument
-is not hypothetical retries: a replay path that re-sends journaled misses will re-send one that
-actually got through, and nothing downstream can tell.
+1. **One idempotency key per event, minted at creation**, carried in the body and in an
+   `Idempotency-Key` header. A replay carries the original key, never a fresh one, because a replay
+   path that re-sends journaled misses will re-send one that got through. The key identifies the
+   caller's logical submission, `(caller identity, caller request id)`, never the content; two
+   legitimate events can carry identical bodies. A unique delivery is `(event id, destination)`.
+2. **Say at-least-once, honestly.** Only a destination that persists and enforces the key can
+   deduplicate. A boolean-returning destination cannot; a spawned process proves only that a process
+   ran; an ignored exit status proves nothing.
+3. **Do not retry inline.** A synchronous send is synchronous so that failure is visible, and a
+   notification must never stall the work it reports on. Hand a failed send to the component that
+   already runs leased jobs, so the retry is a job, not a stall.
+4. **Write the journal entry before attempting delivery; clear it on confirmed success.** A timeout is
+   an unknown outcome; write-ahead turns "might lose an event" into "might deliver twice", and the key
+   makes the second harmless.
+5. **The outbox row is the queue.** A failed leg stays pending and the daemon leases that row; no
+   second job record. Acknowledged rows are kept as audit history. "Acknowledged" means the gateway
+   accepted the request, not that the operator saw it.
 
-The key identifies **the caller's logical submission**, `(caller identity, caller request id)`, never
-the content: two legitimate events can carry identical bodies. A unique delivery is
-`(event id, destination instance)`.
+A recording decorator wraps each destination at the composition root, so recording cannot be
+forgotten. It is fail-quiet (it never changes the delivery outcome) but not invisible: record what the
+destination acknowledged and whether that was recorded, and surface recorder failures through the log
+and the diagnostic command. Order is best-effort: a deferred failure reordering behind a later
+success is inherent, so record a monotonic sequence and promise nothing stronger.
 
-**Say at-least-once, honestly.** Only a destination that persists and enforces the key can
-deduplicate. A destination returning a boolean cannot; a spawned process proves only that a process
-ran; an executable destination whose exit status is ignored proves nothing at all. Document those as
-at-least-once rather than implying exactly-once.
+**"Where did this event go" has exactly one answer, derived from outcomes.** The plan is not that
+answer: an unavailable backend, a contradictory override or a failing destination all deliver nothing
+while a plan-based journal records success. Any code path that decides delivery from partial inputs
+before the plan exists is a second authority that will disagree with the first.
 
-**Do not retry inline.** A synchronous path is often synchronous deliberately, because that is what
-makes a failure visible, and a notification must never fail or stall the work it reports on. Hand a
-failed send to the component that already runs leased jobs, so the retry is off the hot path and
-observable as a job rather than as a stall.
-
-**Write the journal entry BEFORE attempting delivery, and clear it on confirmed success.** The hazard
-is an unknown outcome, which is exactly what a timeout produces. Write-ahead turns "might lose an
-event" into "might deliver twice", and the idempotency key makes the second harmless.
-
-**The outbox row IS the queue.** A failed leg stays pending and the daemon leases that row. Do not
-pair a journal row with a second job record: one mechanism, one place to look. Successful rows are
-marked acknowledged and **retained as audit history, never deleted**. Label "acknowledged" honestly:
-a gateway accepting a request is not the operator seeing it.
-
-**A recording decorator wraps each destination at the composition root**, so adding a destination
-stops requiring anyone to remember to record it. It is **fail-quiet**, meaning it does not change the
-delivery outcome, *not* meaning it is invisible: record two separate facts, what the destination
-acknowledged and whether that was recorded, and surface a recorder failure through the daemon log and
-the diagnostic command. Do not flatten the tool's domain records (decision ring, journal, activity
-ring, policy audit) into it; those have their own readers and retention.
-
-**Order is best-effort.** Deferring a failed send while a later one succeeds inline reorders messages
-by construction. Promise best-effort order, record a monotonic sequence, and do not pretend to
-per-destination ordering, which would require every send to pass through the outbox.
-
-### The delivery answer must be authoritative
-
-**"Where did this event go" has exactly one answer, in one place, derived from OUTCOMES.** Asking the
-*plan* whether something was intended is not that answer: a configured backend that is unavailable, a
-contradictory override pair, or a destination that simply fails all deliver nothing while the journal
-records a success, so the operator is never told and nothing is queued for replay.
-
-Watch for competing authorities. Any code path that decides delivery from partial inputs before the
-plan exists, or that runs independently of the tool's own gating, is a second authority that will
-disagree with the first.
-
-### Crash windows
-
-Audit the ordering of every write against every send:
-
-- Delivery happening before both the decision record and the journal loses both on a crash.
-- A replay path that deletes its claim **before** delivering loses the event on a crash, and a test
-  asserting the claim never survives the run pins that loss window as intended behavior.
-- A drain that excludes claimed rows from its scan while the worker deletes its claim before spawning
-  loses the job on either side of a restart.
+Audit every write against every send for crash windows: delivery before both the decision record and
+the journal loses both; a replay that deletes its claim before delivering loses the event; a drain
+that skips claimed rows while the worker deletes its claim before spawning loses the job on either
+side of a restart. A test asserting "the claim never survives the run" pins a loss window as intended
+behavior.
 
 ## Configuration
 
-Separate: raw deserialization types, validated application settings, adapter-specific settings,
-schema and key metadata, template rendering, filesystem loading, setup answers, publication,
-migrations, and operator diagnostics.
+Separate raw deserialization types, validated application settings, adapter settings, schema and key
+metadata, template rendering, filesystem loading, setup answers, publication, migrations and operator
+diagnostics. Domain and application code never depend on a dynamic configuration value type or a
+free-form table.
 
-**Domain and application code must not depend on a dynamic configuration value type** or on free-form
-tables.
+Strict decoding, with tested rejection of unknown keys, unknown component names, invalid bounds,
+malformed values and unsafe paths. One authoritative definition per key: name, default, bound, secret
+classification, component identity; the renderer, the setup wizard, the decoder and the documentation
+are all checked against it, with golden and anti-drift tests. No custom schema language unless it
+removes more complexity than it adds.
 
-Use strict decoding, and preserve tested rejection of unknown keys, unknown component names, invalid
-bounds, malformed values, and unsafe paths.
+Secrets get a type that cannot reveal its value through the language's ordinary debug and display
+conversions, and stay out of diagnostics, traces, protocol responses and test failure text. Where a
+template pulls secrets from a password manager, the exact action is a contract pinned by tests whose
+stub refuses any other action.
 
-Create **one authoritative definition** for every key name, default, bound, secret classification and
-component identity. The renderer, the setup wizard, the decoder and the documentation are all checked
-against those same definitions. Retain golden and anti-drift tests.
-
-Do not create a large custom schema language unless it demonstrably reduces more complexity than it
-introduces.
-
-**Give secrets a type that cannot reveal its value through the language's ordinary debug and display
-conversions** (Rust's `Debug` and `Display`, Swift's `description` and `debugDescription`). Keep
-secrets out of diagnostics, traces, protocol responses, and test failure text. Where a shipped
-template pulls secrets from a password manager, the exact template action is a contract pinned by
-tests, with the test stub refusing any other action: preserve both.
-
-Add an explicit configuration version and migrations. A version key changes the rendered template,
-which the operator sees on `chezmoi diff` and applies themselves. Say so in the report.
-
-Where a generated file is rendered from committed values, keep the renderer's own tests against
-**fixtures the package owns**, and pin `template == render(values)` from the outer repository instead.
-A package that reaches out of its own folder, by a compile-time file include or a runtime path join, stops building
-the day it moves repositories.
+An explicit configuration version with migrations. A package keeps its renderer tests against
+fixtures it owns and pins `template == render(values)` from the outer repository; a package that
+reaches outside its own folder, by a compile-time include or a runtime path join, stops building the
+day it moves.

@@ -5,8 +5,8 @@ Agent skills, each shipped as a Claude Code plugin so it installs the same way e
 | Plugin | Skills | What it is for |
 | --- | --- | --- |
 | `strategy` | `open-loop`, `closed-loop`, `orchestrator-loop`, `ledger` | Three slice pipelines and the ledger scripts that gate their merges; install the plugin whole, the loops read `../ledger/` |
-| `clean-code` | `clean-code`, `clean-code-rust`, `clean-code-swift` | The clean-code architecture standard and its language bindings |
-| `tiktok-crawling` | `tiktok-crawling` | TikTok crawling, content retrieval and analysis with yt-dlp |
+| `clean-code` | `clean-code`, `clean-code-rust`, `clean-code-swift` | The clean-code method for layered tools; the language skills own the numbers, so install the plugin whole |
+| `tiktok-crawling` | `tiktok-crawling` | TikTok crawling, metadata export and analysis with yt-dlp (based on RomneyDa's ClawHub skill) |
 
 ## Install
 

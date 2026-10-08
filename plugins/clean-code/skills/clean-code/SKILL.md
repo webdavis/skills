@@ -1,55 +1,37 @@
 ---
 name: clean-code
-description: "The language-neutral architecture standard for the custom tools this repository owns. Use when restructuring a tool into layered modules, deciding boundaries or where a seam goes, designing a versioned protocol between a tool and its callers, choosing between a database and the filesystem for durable state, planning the pull-request ladder for a large refactor, or reviewing work against SOLID, file-size and test-quality standards. Always pair it with the language skill for the tool at hand."
+description: >-
+  The language-neutral method for building or restructuring a tool into layered modules, with a
+  written target, a finite procedure, a pull-request ladder and an exit checklist of conditions a
+  command can verify. Use whenever code is being restructured into modules, a boundary or seam has
+  to be placed, a versioned protocol between a tool and its callers is designed, a store for
+  durable state is chosen, a large refactor is planned as a series of pull requests, or work is
+  reviewed against SOLID, file-size and test-quality rules, even when the request only says "clean
+  this up" or "refactor". Always pair it with clean-code-rust or clean-code-swift for the language
+  at hand; the numbers live there.
 ---
 
 # Clean code
 
-The method for building and restructuring a custom tool this repository owns. It is deliberately
-language-neutral: the ladder, the boundaries, the test obligations and the delivery rules are the
-same whatever the tool is written in.
+The method for taking a tool from where it is to a layered architecture without losing behavior on
+the way. It is language-neutral: the roles, the procedure, the test obligations and the delivery
+rules are the same whatever the tool is written in.
 
-**Read a language skill alongside this one. Always.** This skill states what must be true; the
-language skill states how that is spelled and enforced in a particular toolchain:
+**Read the language skill alongside this one, always**: `../clean-code-rust/SKILL.md` or
+`../clean-code-swift/SKILL.md`. This skill says what must be true; the language skill says how that
+is spelled and enforced in its toolchain, and it alone carries numbers (file sizes, gate commands,
+counting commands). Nothing here repeats them, so the two cannot disagree.
 
-- **Rust**: the `clean-code-rust` skill (`../clean-code-rust/SKILL.md` beside this file)
-- **Swift**: the `clean-code-swift` skill (`../clean-code-swift/SKILL.md` beside this file)
+Three references, consulted rather than read front to back:
 
-Those paths are the canonical store and resolve identically from Claude Code, Codex and hermes. Where
-this skill and a language skill disagree on a number or a mechanism, **the language skill wins**: it
-was written against that toolchain's real behavior.
-
-## The three references
-
-Consult these; do not read them front to back.
-
-- [`ARCHITECTURE.md`](ARCHITECTURE.md): the module roles and what belongs in each, the extension
-  model, SOLID, typed outcomes, public API discipline, and the file-size standard.
-- [`TESTING.md`](TESTING.md): test-first versus a pure move, mutation verification by hand, the speed
-  gate, the rule that nothing reaches a real destination, and the test levels.
+- [`ARCHITECTURE.md`](ARCHITECTURE.md): the five module roles, the extension model, SOLID, choosing
+  an abstraction, outcomes, concurrency, public API discipline, file-size rules.
+- [`TESTING.md`](TESTING.md): new behavior versus a pure move, the mutation table, the speed gate,
+  the sandbox rule, the test levels.
 - [`PERSISTENCE.md`](PERSISTENCE.md): classifying durable state, a database versus the filesystem,
-  delivery safety, configuration, and secrets.
+  delivery safety, configuration and secrets.
 
-## Scope of the work
-
-Treat mature code as behaviorally mature and structurally concentrated. The existing tests carry
-product, compatibility, privacy, concurrency, process-lifecycle and failure-direction
-specifications. Preserve those. Do not preserve accidental internal structure merely because the
-current implementation, or a mechanism-specific test, asserts it.
-
-This is not a request for the smallest incremental cleanup. Implement the best final architecture.
-Sequence the work so it stays verifiable, but do not stop after introducing facades, moving a few
-helpers, or preparing a future migration.
-
-Where the tool is planned to move to its own repository, design it as a standalone package now:
-nothing outside its own folder may dictate its shape, and it may contain no path that reaches outside
-that folder. Code outside the folder may be changed whenever the tool's design needs it, and every
-such change lands in the same pull request as the change that needs it, with the reason named. Do not
-perform the repository move itself.
-
-## Engineering priorities
-
-In this order:
+## Priorities, in order
 
 1. Correct observable behavior and safety invariants.
 2. Stable compatibility and protocol contracts.
@@ -60,197 +42,137 @@ In this order:
 7. Reuse through demonstrated abstractions.
 8. Performance improvements supported by evidence.
 
-Do not damage a higher-priority property to satisfy a lower-priority metric such as line count,
-interface count, or coverage percentage.
+Never damage a higher item to satisfy a lower one. A line count, an interface count or a coverage
+percentage is never a reason to weaken behavior, a contract or a test.
 
-## Step 1: enumerate the consumers outside the folder
+## Write the target down before touching code
 
-The tool leads and its consumers follow. Before touching anything, enumerate them and, for each, name
-what may change, what stays fixed, and how to prove it. **Verify by running the real command, never by
-reasoning about it.**
+The work is finished when the tree matches three documents, so write them first. They are the
+measuring sticks for the exit checklist; without them "done" is an opinion.
 
-The usual set in this repository:
+1. **The module map**: the units the tool will have, the allowed dependency edges between them, and
+   one sentence per unit saying what it is responsible for. A unit whose sentence needs "and" is two
+   units. A tool too small for five roles takes fewer; say which role was folded into which and why.
+2. **The behavior baseline**: the set of leaf test names with their results, taken before any move,
+   never a count. A count passes when one test is dropped and another added. Every permanent-contract
+   test maps to its successor by name; a removed test appears in the mapping with its reason. Save the
+   specifications as `Given` / `When` / `Then` scenarios under `docs/specs/` and the reasoning behind
+   each non-obvious choice under `docs/decisions/`, both inside the package so they move with it.
+3. **The consumer list**: every caller outside the tool's folder (build scripts, task runners, sibling
+   packages, generated files, the command-line surface), each with what may change, what stays
+   fixed, and the command that proves it. Prove by running the command, never by reading.
 
-- **The chezmoi builder script** that compiles and installs the binary. Its build line and paths
-  change with the layout; the deployed contract (where the source deploys, where the binary installs,
-  and that the build runs from a committed lockfile) does not.
-- **The justfile recipes** that invoke the build system with an explicit manifest path. Update them
-  to the new shape and read which units ran, to prove every one is covered.
-- **Any sibling package that depends on the tool by path.** Do not keep a legacy import path alive
-  behind a facade: put the shared code where it belongs, update the sibling's manifest and imports in
-  the same pull request, and add the sibling's own test command to your gates. The boundary you draw
-  now is the one that sibling consumes once the tool moves repositories.
-- **The command-line surface**, when it is a compatibility contract. Grep for every in-repo
-  invocation of the installed binary path before touching argument handling. Some callers are not
-  yours to change: a generated third-party config holding one pathname cannot be given a subcommand.
-- **Any generated file the tool renders.** Regenerate it through its recipe whenever rendering
-  changes, in the same pull request, and name the change in the report.
+Name modules and types from the source's own vocabulary. Where a circulated glossary and the code
+disagree, the code wins. `manager`, `handler`, `service`, `utils`, `common` and `misc` are allowed
+only when nothing more precise exists.
 
-Freeze the tool's own backlog for the duration. Every open item is either absorbed as a named design
-decision or re-filed against the new structure in the completion report. None is dropped silently.
+The existing tests carry the product, compatibility, privacy, concurrency, process-lifecycle and
+failure-direction specifications: preserve those. Do not preserve accidental internal structure
+because a mechanism-specific test happens to assert it. Do not invent product behavior without
+recording it as a decision.
 
-## Step 2: establish the behavioral specification
+## The procedure
 
-Before moving production code, inventory the externally meaningful behaviors the tests and source
-comments currently specify.
+Each step ends in a named artifact. A step without its artifact did not happen.
 
-Record the baseline as the **set of leaf test names with their results, never a count**. A count
-passes when one test is dropped and another added, and it passes a rename. Keep a table mapping every
-permanent-contract test to its successor by name; a removed test appears in that table with its
-reason.
+| step | work | artifact |
+| --- | --- | --- |
+| 1 | Record the baseline suite and the consumer list | the two documents above |
+| 2 | Classify every test: permanent contract, adapter contract, obsolete mechanism test, migration test | the test mapping |
+| 3 | Create the units and their declared edges; update every consumer in the same PR | the build passes with the map's edges and no others |
+| 4 | Move pure policy into the domain unit | domain builds with no infrastructure dependency |
+| 5 | Define use cases and the ports they own; define the versioned protocols test-first | protocol fixtures per version |
+| 6 | Reimplement the legacy entry points as adapters over the use cases | the legacy tests pass through the adapters |
+| 7 | Replace central name-based dispatch with registries holding real implementations | no switch on a destination or plugin name remains |
+| 8 | Move durable state into semantic repositories; migrate or deliberately preserve existing state | contract suite green on each implementation |
+| 9 | Move system, network, filesystem and process behavior into adapters; reduce the executable to decoding and composition | entry point under the language skill's limit |
+| 10 | Split tests by behavior; delete obsolete compatibility code and mechanism tests | mapping complete, no `part1` files |
+| 11 | Run the exit checklist | the completion report |
 
-Write concise specifications under `docs/specs/` and decision records under `docs/decisions/`, both
-**inside the package**, so they travel with it when it is extracted.
+Do not stop after creating interfaces while the old modules still own the behavior. Do not leave two
+architectures in the tree past the pull request that introduces the second. No placeholder adapters,
+TODO-only use cases or unused protocols.
 
-Express each use case as observable scenarios (`Given` / `When` / `Then`), and for each identify:
+## The pull-request ladder
 
-- success behavior
-- every meaningful failure source
-- fail-open or fail-closed direction
-- exact threshold behavior, and one step either side of each threshold
-- required side effects and forbidden side effects
-- cancellation or timeout behavior
-- idempotency and duplicate behavior
-- privacy requirements
-- process ownership and cleanup
-- which output and exit-code details are compatibility contracts
+The end state is fixed; it lands as an ordered series of pull requests to `main`, one or more per
+step. Decide the ladder (how many PRs, which step each covers) before opening the first, and write it
+in the first PR's description. Every PR:
 
-Do not invent new product behavior without identifying it as a deliberate design decision. Move long
-historical explanations and measured investigation narratives into `docs/decisions/`. Keep concise
-comments in production and tests stating the governing invariant, linking to the decision record when
-more history helps. Do not delete rationale to reduce line count.
+- builds from the committed lockfile and passes the project's gates (the language skill names them),
+  plus every dependent consumer's own test command;
+- leaves `main` deployable;
+- states which kind of work it is, **new behavior** or **pure move**, with the evidence
+  [`TESTING.md`](TESTING.md) demands for that kind;
+- for a tool with a command-line surface, passes a differential over the frozen surface against the
+  binary built from the previous `main`, **with a control mutant the differential is shown to catch**.
+  A differential without a failing control proves nothing: one harness compared a file with itself and
+  reported zero mismatches against a broken binary;
+- is small enough to review in one sitting. Decompose by behavior before starting.
 
-## Step 3: build the glossary from the source
+## Termination
 
-Name modules and types after the tool's own concepts, capabilities, use cases, policies, protocols
-and adapters. Derive the vocabulary from the source's own names during the specification step. Where
-a circulated vocabulary list and the code disagree, **the code wins**: check each term against the
-source before adopting it, because a term that names nothing in the code is either a new concept you
-are introducing deliberately or a mistake.
+These rules exist because "make it clean" has no natural end, and an agent that keeps improving
+never ships.
 
-Avoid `manager`, `processor`, `handler`, `service`, `helpers`, `utils`, `common` and `misc` where a
-more precise domain name exists. They are not categorically forbidden; use one only when it
-accurately describes a recognized role and nothing more precise exists. Do not import naming from
-unrelated sample applications.
+- **The exit checklist decides.** When every row passes, the work is done, even if more could be
+  improved. What remains is filed as a task with a reason, never silently dropped and never chased in
+  the same PR.
+- **One action per finding per PR.** A review finding against this standard is fixed once, or recorded
+  with its reason. The same finding does not get a second round in the same PR.
+- **One split per oversized file per PR.** Split by responsibility. If one of the resulting pieces
+  cannot be described in one sentence, keep the file whole and record it in the exceptions table with
+  the sentence that failed. Never split by `part_1`, never move code into `utils` to shrink a number.
+- **One mutant per changed behavior.** The mutation table ([`TESTING.md`](TESTING.md)) has one row
+  per behavior the PR adds or changes, plus the control row. When every row names its killing
+  assertion or carries an intermediate-state argument, mutation work is finished.
+- **The ladder has a length.** If the PR count passes twice the number written in the first PR, stop
+  and re-plan with the owner instead of continuing.
+- **Gates are run, not reasoned about.** Report a command as passed only when it ran and exited 0.
 
-## Step 4: the ordered procedure
+## Exit checklist
 
-The final result must implement the full target architecture. This sequence keeps it correct along
-the way:
+Every row has a check that does not depend on judgment.
 
-1. Run and record the complete baseline suite, as a set of test names with results.
-2. Extract the behavioral specifications into `docs/specs`.
-3. Classify every existing test as a permanent behavioral contract, an adapter contract, an obsolete
-   implementation-mechanism test, or a migration test.
-4. Create the module boundaries and their dependency direction, updating the builder, the justfile
-   and every dependent sibling in the same pull request, proved by running their commands.
-5. Move pure policy into the domain module, with no infrastructure dependencies.
-6. Define application use cases and consumer-owned ports.
-7. Define the versioned protocols test-first.
-8. Implement legacy command-line and hook adapters over the new use cases.
-9. Implement real registries and remove central name-based dispatch.
-10. Separate any stateful indicator into policy and infrastructure.
-11. Introduce semantic repositories and their persistence.
-12. Migrate or intentionally preserve existing durable state.
-13. Split configuration parsing, validation, schema, rendering, setup and publication.
-14. Move system, network, filesystem and process behavior into adapters.
-15. Reduce the executables to command adaptation and composition.
-16. Split unit and acceptance tests by behavior.
-17. Remove obsolete compatibility code and mechanism tests.
-18. Run every quality gate and verify file-size compliance.
-
-Do not stop after creating new interfaces while the old modules still own the behavior. Do not leave
-duplicate old and new architectures indefinitely. Do not write TODO-only adapters, placeholder use
-cases, or unused protocols.
-
-## Delivery: the pull-request ladder
-
-The end state is not negotiable; how it lands is an ordered ladder of pull requests to `main`, one or
-more per step of the procedure above. Every pull request:
-
-- builds with the builder's build line as it stands after that pull request, and passes the tool's
-  test recipe, `just lint-check`, and every dependent sibling's tests;
-- leaves `main` deployable, because the builder rebuilds the binary on every apply;
-- passes an **argument-surface differential** against the binary built from the previous `main`, over
-  the frozen command-line surface, **with a control mutant the differential is shown to catch**. A
-  differential without a failing control proves nothing: a previous harness compared a file with
-  itself and reported zero mismatches against a broken binary;
-- states which kind of work it is, new behavior or a pure move, and gives the matching evidence (see
-  [`TESTING.md`](TESTING.md));
-- stays small enough to review. Decompose by behavior before starting.
-
-Old and new structure may coexist between pull requests, never indefinitely. No pull request may
-leave a large module owning behavior that a new module claims to own.
-
-## Quality gates
-
-Run the repository's own commands, whose text may change in the pull request that changes the layout
-they describe. What may not change is that each keeps covering every unit:
-
-    just lint-check
-    just ship
-
-plus the tool's own test recipe, the test command of every dependent sibling, the builder's own build
-line, and the regenerate-and-diff check for any generated file the tool renders. The language skill
-names the exact recipe and the compiler-level gates.
-
-`just lint-check` is the drift gate CI runs. treefmt has no dry run, so a red gate has already
-written its fixes into the tree: stage them and rerun.
-
-Do not add broad lint suppressions. A suppression must be narrow and explain why the lint is
-incorrect at that specific location. **Do not claim a command passed unless it actually ran
-successfully.**
-
-## The sol review
-
-Every pull request in a refactor of this size gets a `sol` review at ultra reasoning in addition to
-the pipeline's own steps. Its scope is fixed: SOLID adherence, abstraction quality, composability,
-test quality, and test environment quality. Correctness follows where it derives from those; style
-nits do not.
-
-    codex exec --model gpt-6-astra -c model_reasoning_effort=ultra --sandbox read-only "$(cat <prompt>)" </dev/null
-
-The stdin redirect is load-bearing: without it the call hangs forever. The prompt carries the step's
-diff, what the step is deliberately not doing, the target architecture, and the evidence the step
-offers, and it asks sol to **disagree with the architecture where it thinks the architecture is
-wrong** rather than to validate it. The verdict is recorded in the slice's findings register as a
-review step like any other.
+| condition | check |
+| --- | --- |
+| Dependency edges equal the module map | the language skill's boundary command passes; an undeclared edge fails the build |
+| Domain unit has no infrastructure dependency | its manifest names none; the language skill's manifest test |
+| Baseline tests all accounted for | every baseline name passes or appears in the mapping with a reason |
+| New behavior landed test-first | each PR cites the commit where the test failed before the implementation |
+| Mutation table complete | every row has a killing assertion or an argument; the control row is green |
+| Differential passed with a failing control | its output in the PR, control mutant included |
+| Every test under the speed gate | the suite's own timing guard reports no violation |
+| No test reaches a real destination | the harness uses a sandbox `HOME` and scripted transports |
+| File sizes within the language skill's table | the counting command's full output in the report; exceptions listed with reasons |
+| Entry point under the language skill's limit | the counting command |
+| No central name switch | search for the old dispatch sites returns nothing |
+| Consumers proved | each consumer's command ran and passed |
+| Specs and decisions inside the package | `docs/specs/`, `docs/decisions/` exist and the package has no path reaching outside its folder |
 
 ## Completion report
 
-Report:
+Short and complete; it is read by whoever maintains the tool next.
 
-1. The final dependency graph.
-2. The behavior specifications created.
-3. Each protocol, including its versioning and compatibility policy.
-4. How each legacy entry point maps into the normalized request.
-5. The extension interfaces and registries introduced.
-6. The use cases and consumer-owned ports introduced.
-7. Which persistent state moved stores, and to what.
-8. Which filesystem protocols remained, and why the filesystem is part of their contract.
-9. State and configuration migration behavior.
-10. Every removed central switch or name-based dispatch path.
-11. Before-and-after line counts for every previously oversized file.
-12. Every file remaining above the review threshold, with its justification.
-13. Tests added, moved, replaced or removed, as the name-mapping table, including why each
-    mechanism-specific test became obsolete. Per pull request: which kind of work it was, and the
-    matching evidence.
-14. Exact commands executed and their results.
-15. The argument-surface differential result, with the control that proves it can fail.
-16. Every generated-file change, with its byte diff.
-17. What the operator must verify live after their own apply. Agents never apply.
-18. Every change made outside the tool's folder, with the need that drove it.
-19. Any unresolved behavior or risk.
+1. The module map as built, with the dependency graph.
+2. The behavior specifications and decision records created.
+3. Each protocol with its versioning and compatibility policy.
+4. How each legacy entry point maps into the new use cases.
+5. The registries introduced and the central dispatch removed.
+6. Which durable state moved stores, which filesystem protocols stayed and why the filesystem is
+   part of their contract, and how existing state was migrated.
+7. The test mapping, per PR: kind of work and its evidence; the mutation tables.
+8. The counting command's output for every handwritten file; the exceptions table.
+9. The exact commands run and their results, including the differential and its control.
+10. Every change made outside the tool's folder, with the need that drove it.
+11. What the operator must verify live after they deploy; agents never deploy or drill live systems.
+12. Unresolved risks and the tasks filed.
 
-Do not describe the work as complete while a known oversized module, duplicate architecture, failing
-test, protocol ambiguity, or unowned process remains.
+## Standing rules
 
-## Standing repository rules that apply throughout
-
-- No em-dashes anywhere: code, comments, documents, commit messages.
-- Conventional Commits, one logical change per commit, never a `Co-Authored-By` trailer or a
-  generated-with footer.
-- `trash`, never `rm`, including scratch directories you create yourself.
-- Never `git push --force`, never `chezmoi apply`, never `launchctl kickstart` or `bootout` a real
-  agent. The operator runs applies and live drills; agents never verify a binary against real
-  destinations.
+- Never describe the work as complete while a known oversized module, a duplicate architecture, a
+  failing test, a protocol ambiguity or an unowned process remains. Say so and file it.
+- No broad lint suppressions: a suppression is narrow and explains why the lint is wrong there.
+- Conventional Commits, one logical change per commit.
+- The operator runs deployments and live drills. No test, differential or verification step touches
+  a real destination.

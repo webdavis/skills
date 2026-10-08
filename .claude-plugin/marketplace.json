@@ -12,7 +12,7 @@
     {
       "name": "clean-code",
       "source": "./plugins/clean-code",
-      "description": "The clean-code architecture standard and its Rust and Swift bindings."
+      "description": "The clean-code method for layered tools, with its Rust and Swift spellings."
     },
     {
       "name": "tiktok-crawling",

@@ -1,163 +1,35 @@
 ---
 name: clean-code-rust
-description: "The Rust bindings of this repository's clean-code standard. Use when building or restructuring a Rust tool this repository owns (pns, uu, the herdr plugins): converting a crate into a Cargo workspace, drawing crate boundaries, choosing between a trait, an enum and a concrete type, picking a persistence crate, or running the Rust quality gates. Read the language-neutral method alongside it."
+description: >-
+  The Rust spelling of the clean-code method: a Cargo workspace per tool with one crate per role,
+  Cargo manifests as the boundary enforcer, trait/enum/newtype choices, typed errors, fenced unsafe,
+  rusqlite persistence, cfg(test) layout, the cargo gates, and the file-size table with its counting
+  command. Use whenever a Rust crate or workspace is built or restructured, a crate boundary is
+  drawn, a trait versus enum versus concrete type is chosen, a persistence crate is picked, or Rust
+  work is reviewed, even if the request only says "refactor" or "clean up this crate". Read it with
+  the language-neutral clean-code skill; this file owns every number.
 ---
 
 # Clean code: Rust
 
-**Read the `clean-code` skill first** (`../clean-code/SKILL.md` beside this file). That skill carries the method: the
-ordered ladder, the five module roles and their dependency direction, SOLID, the test obligations,
-the delivery ladder, the sol review, and the completion report. This file states only how those are
-spelled and enforced in Rust, and it wins wherever the two disagree on a number or a mechanism.
+Read `../clean-code/SKILL.md` first; it carries the method (priorities, the written target, the
+procedure, the ladder, termination, the exit checklist). This file says how each rule is spelled and
+enforced in Rust, and it is the only place the numbers live.
 
-The Rust tools this repository owns today: `pns` (`pns`), `uu`
-(`uu`), and the three herdr plugins, which live in their own repositories under
-`webdavis` since 2026-09-17. The worked
-example is [`PNS-EXAMPLE.md`](PNS-EXAMPLE.md), read from `webdavis/pns` at commit `e4632e8` on
-2026-09-28.
+## Standards
 
-## The owner's standards
-
-These win over everything below where they differ.
-
-- TDD (test-driven development): failing behavioral test, minimal implementation, refactor.
-- SOLID (single responsibility, open/closed, substitutability, interface segregation, dependency inversion).
-- DRY (don't repeat yourself), without speculative abstractions.
+- TDD: failing behavioral test, minimal implementation, refactor.
+- SOLID and DRY, without speculative abstractions.
 - Self-documenting code; comments only for non-obvious intent or safety.
-- Production files should stay within 150 lines, never exceed 250. Separate test files. Split by cohesive
-  domain responsibility.
-- Idiomatic safe Rust: explicit ownership, typed errors, deterministic cleanup, bounded resources, and
-  preserved privacy and durability.
-- Unsafe is rare and fenced off:
-  - Keep each unsafe block as small as possible, isolated in its own small module.
-  - Every single block requires a one- or two-line `// SAFETY:` comment explicitly proving why undefined
-    behavior is impossible.
+- Idiomatic safe Rust: explicit ownership, typed errors, deterministic cleanup, bounded resources.
+- `unsafe` is rare and fenced: each block as small as possible, in its own small module, with a one-
+  or two-line `// SAFETY:` comment proving why undefined behavior is impossible, plus focused tests.
+  Enable `clippy::undocumented_unsafe_blocks` and `clippy::unnecessary_safety_comment` so a missing
+  or stray comment fails the gate instead of a review.
 
-## The workspace
+## File sizes
 
-The five roles are five crates in one Cargo workspace:
-
-    crates/<tool>-domain
-    crates/<tool>-application
-    crates/<tool>-protocol
-    crates/<tool>-adapters
-    crates/<tool>-cli
-
-**`Cargo.toml` is the enforcer.** A crate can only `use` what its own `[dependencies]` names, so an
-inward dependency from domain or application code to a concrete adapter fails to compile rather than
-passing review by luck. A declared cycle is refused by cargo outright.
-
-The binary target keeps the tool's name (`[[bin]] name = "<tool>"`), because every caller invokes it
-by that name. Keep `Cargo.lock` committed and build `--locked`.
-
-`main.rs` targets 50 to 150 lines, preferably under 100, and must be below 150 at completion.
-
-### What the domain crate excludes
-
-Filesystem access, SQLite, TOML, JSON, HTTP, environment variables, process spawning, macOS APIs,
-vendor APIs, executable discovery, and CLI output. Prefer `std`-only unless a small dependency is a
-genuine domain primitive.
-
-## Rust abstraction choices
-
-- a **concrete type** when there is one implementation and no substitution need
-- a **closure** for one injected operation such as a clock or a mapper
-- a **trait** for a stable external capability or a meaningful contract
-- an **enum** for a closed set of alternatives, which is how the neutral rule "make invalid states
-  unrepresentable" is spelled here: replace conflicting boolean pairs with one enum
-- a **newtype** for validated identifiers and sensitive values
-- **generics** when compile-time composition improves clarity
-- **`dyn Trait`** at the composition root's heterogeneous collections only
-
-Do not create a trait for every struct, create one-method wrapper types merely for dependency
-injection, use `Box<dyn Trait>` throughout domain code, introduce generic parameters that obscure the
-use case, build a service locator, or hide branching inside macros to make files look shorter.
-
-The destination interface:
-
-    trait NotificationDestination: Send + Sync {
-        fn id(&self) -> &DestinationId;
-        fn capabilities(&self) -> DestinationCapabilities;
-        fn deliver(&self, request: &DeliveryRequest) -> DeliveryOutcome;
-    }
-
-## Errors and outcomes
-
-Do not use `Option` where several materially different failure or unknown states must be
-distinguished for diagnostics or policy: use a typed `Result` or a purpose-built enum.
-
-Do not panic on ordinary external failures. A panic is acceptable only for a compiled-in invariant
-whose violation is a programmer error and cannot depend on operator input or runtime conditions.
-Avoid `unwrap` and `expect` on untrusted input.
-
-Do not add `Arc<Mutex<_>>` by default. First consider ownership, immutable sharing, message passing,
-task confinement, or a transaction.
-
-Do not introduce Tokio or another async runtime solely to make the architecture look modern. The
-synchronous, deadline-bounded model is acceptable.
-
-Isolate every `unsafe` block, test code included, in its own small module, keep the block as small as
-possible, give each one a one- or two-line `// SAFETY:` comment proving why undefined behavior is
-impossible, and add focused tests.
-
-## Visibility
-
-Private by default. `pub(super)` for narrow parent collaboration, `pub(crate)` for internal
-cross-module collaboration, `pub` only for intentional crate APIs. Do not make the module tree public
-so integration tests can reach it; curate exports in `lib.rs`.
-
-## Persistence
-
-Prefer synchronous `rusqlite` over an async database layer unless a runtime requirement proves
-otherwise. WAL mode, versioned migrations, explicit transactions, bounded busy timeouts, restrictive
-file permissions, typed codecs. **Every caller handles `SQLITE_BUSY` with a bounded timeout.**
-
-Domain and application code must not depend on `toml::Value` or free-form plugin tables.
-
-A crate that reaches outside its own folder with `include_str!` or an `env!("CARGO_MANIFEST_DIR")`
-path join stops compiling the day the crate moves repositories. Keep the crate's tests against
-fixtures it owns, and pin any generated-file equality from the outer repository instead.
-
-## Tests
-
-**New behavior is written test-first, without exception.** Write the failing test, run it under
-`cargo test`, see it fail for the reason you intended, then make it pass. A pure move is exempt: it
-owes a test that already pins the behavior, written before the move if none exists. The full rule,
-and the mutation verification every fix owes after green, is in `clean-code/TESTING.md`.
-
-Unit tests live beside their implementation under `#[cfg(test)] mod tests;`. A large unit-test module
-may live in a private child file (`src/lights/schedule.rs` beside `src/lights/schedule/tests.rs`);
-that is still `cfg(test)` and does not enter production builds.
-
-**Tooling that exists, and tooling that does not.** `cargo-mutants` and `cargo-fuzz` are **not
-installed**: mutation testing is done by hand, per behavior, against an unmutated control, and the
-table goes in the report. Every crate pins `channel = "stable"` in its own `rust-toolchain.toml`, so
-a plain `cargo` call runs stable whatever rustup's default is. `cargo-miri` **is** installed, on a
-nightly that has to be asked for by name: run it as `cargo +nightly miri`. CI is stable macOS, so
-**Miri results are local evidence, never a CI gate**. Add `proptest` only after naming the input
-space it covers better than examples do.
-
-`cargo test --workspace` runs crates in parallel competing for the same CPU, so measure the speed gate
-under that configuration.
-
-## Quality gates
-
-pns, uu, damnit, lights and herdr-damnit run their gates with `just gates`. A repository without that recipe runs the cargo lines below.
-
-    just gates
-    cargo fmt --all -- --check
-    cargo check --workspace --all-targets
-    cargo clippy --workspace --all-targets -- -D warnings
-    cargo test --workspace --no-fail-fast
-    RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps
-
-Plus the builder's own cargo line and every dependent sibling's test command. Do not add broad lint
-suppressions; a `#[allow]` must be narrow and explain why the lint is wrong at that location.
-
-## The file-size command
-
-Count physical lines after `rustfmt`, with this command and no other. `tokei` mis-parses this tree:
-its totals fall thousands of lines short of `wc -l`.
+Count after `rustfmt`, with this command and no other (`tokei` mis-parses `cfg(test)` trees):
 
     git ls-files '<crate-path>/*.rs' | while IFS= read -r f; do
       awk -v F="$f" '
@@ -168,12 +40,118 @@ its totals fall thousands of lines short of `wc -l`.
           if (F ~ /(^|\/)tests(\.rs|\/)/) impl = 0
           printf "%5d impl %5d total  %s\n", impl, total, F
         }' "$f"
-    done | sort -k3,3rn
+    done | sort -k1,1rn
 
-Implementation lines are those before the first `#[cfg(test)]`; a file named `tests.rs` or under a
-`tests/` directory has zero. **A `#[cfg(test)]` item above production code is itself a finding**, not
-a way to shrink the number.
+Implementation lines are those before the first `#[cfg(test)]`; a file named `tests.rs` or under
+`tests/` has zero. A `#[cfg(test)]` item above production code is a finding, not a way to shrink the
+number.
 
-Limits, per the owner's standing rule: production files stay within 150 implementation lines and never
-exceed 250. Test files live apart from production code and stay under 400 total lines, with no
-handwritten `.rs` file over 500.
+| file | target | hard limit |
+| --- | --- | --- |
+| production (`impl` lines) | 150 | 250 |
+| test file (total lines, separate from production code) | 300 | 400 |
+| any handwritten `.rs` (total lines) | | 500, no waiver |
+| `main.rs` | under 100 | 150 at completion |
+
+Over the target is a responsibility review; over the hard limit is one split attempt per pull request
+(method, Termination), with the exception recorded if the split cannot name one responsibility per
+piece. The completion report carries the command's full output.
+
+## The workspace
+
+Five roles, five crates, one Cargo workspace:
+
+    crates/<tool>-domain
+    crates/<tool>-application
+    crates/<tool>-protocol
+    crates/<tool>-adapters
+    crates/<tool>-cli          # [[bin]] name = "<tool>", because callers invoke it by that name
+
+**`Cargo.toml` is the enforcer.** A crate can only `use` what its own `[dependencies]` names, so an
+inward dependency from domain or application code to an adapter fails to compile. A declared cycle is
+refused outright. Pin the direction with one test in the domain crate that reads its own `Cargo.toml`
+and fails if any non-dev dependency appears; that is the exit checklist's "manifest test". Commit
+`Cargo.lock` and build `--locked`. Pin `channel = "stable"` in `rust-toolchain.toml` so a plain `cargo`
+runs the same toolchain everywhere.
+
+The domain crate excludes filesystem access, SQLite, TOML, JSON, HTTP, environment variables,
+process spawning, platform APIs, vendor APIs, executable discovery and CLI output. `std` only, unless
+a small dependency is a genuine domain primitive.
+
+A crate that reaches outside its own folder with `include_str!` or an `env!("CARGO_MANIFEST_DIR")`
+join stops compiling the day it moves repositories; keep its tests against fixtures it owns.
+
+## Abstraction choices
+
+- a **concrete type** for one implementation with no substitution need
+- a **closure** for one injected operation such as a clock or a mapper
+- a **trait** for a stable external capability or a meaningful contract
+- an **enum** for a closed set of alternatives; this is how "make invalid states unrepresentable" is
+  spelled, replacing conflicting boolean pairs
+- a **newtype** for validated identifiers and sensitive values; implement `Debug` and `Display` by
+  hand so a secret cannot print itself
+- **generics** when compile-time composition improves clarity
+- **`dyn Trait`** only in the composition root's heterogeneous collections
+
+Not: a trait per struct, one-method wrapper types for injection, `Box<dyn Trait>` through domain
+code, generic parameters that obscure the use case, a service locator, or macros that hide branching.
+
+The destination interface, as an example of a port:
+
+    trait NotificationDestination: Send + Sync {
+        fn id(&self) -> &DestinationId;
+        fn capabilities(&self) -> DestinationCapabilities;
+        fn deliver(&self, request: &DeliveryRequest) -> DeliveryOutcome;
+    }
+
+## Errors, outcomes, concurrency
+
+`Option` cannot distinguish several failure or unknown states; use a typed `Result` or a purpose-built
+enum. No panic on ordinary external failure: a panic is for a compiled-in invariant that cannot depend
+on operator input or runtime conditions, so no `unwrap` or `expect` on untrusted input. `Arc<Mutex<_>>`
+is the last resort after ownership, immutable sharing, channels, task confinement and transactions.
+No Tokio or other async runtime unless a measured requirement demands one; a synchronous,
+deadline-bounded model is acceptable.
+
+## Visibility
+
+Private by default. `pub(super)` for narrow parent collaboration, `pub(crate)` for internal
+cross-module use, `pub` only for intentional crate APIs. Curate exports in `lib.rs`; never make the
+module tree public so integration tests can reach it.
+
+## Persistence
+
+Synchronous `rusqlite` over an async database layer unless a runtime requirement proves otherwise.
+WAL mode, versioned migrations, explicit transactions, bounded busy timeouts (every caller handles
+`SQLITE_BUSY`), restrictive file permissions, typed codecs. Domain and application code never depend
+on `toml::Value` or free-form tables.
+
+## Tests
+
+New behavior is written test-first under `cargo test`; a pure move owes a test that already pins the
+behavior, written before the move if none exists; every changed behavior gets a mutation-table row
+(`../clean-code/TESTING.md`).
+
+Unit tests live beside their implementation under `#[cfg(test)] mod tests;`; a large module may live
+in a private child file (`src/x.rs` beside `src/x/tests.rs`), still `cfg(test)`, still not shipped.
+
+Tooling: if `cargo mutants` is installed, run it on the changed crates and paste the summary as the
+mutation table's evidence, with the control being its baseline run; otherwise produce the rows by
+hand. Add `proptest` only after naming the input space it covers better than examples do. Miri, when
+available, is local evidence, not a gate. `cargo test --workspace` runs crates in parallel on one CPU,
+so measure the speed gate under that configuration.
+
+## Gates
+
+A project with a `just gates` recipe runs that; otherwise these lines, which are what such a recipe
+contains:
+
+    cargo fmt --all -- --check
+    cargo check --workspace --all-targets --locked
+    cargo clippy --workspace --all-targets --locked -- -D warnings \
+      -W clippy::undocumented_unsafe_blocks -W clippy::unnecessary_safety_comment
+    cargo test --workspace --no-fail-fast --locked
+    RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps
+
+Plus the project's own build line and every dependent consumer's test command. A `#[allow]` is
+narrow and explains why the lint is wrong at that location.
