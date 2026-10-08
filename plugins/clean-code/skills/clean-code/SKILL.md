@@ -48,7 +48,9 @@ percentage is never a reason to weaken behavior, a contract or a test.
 ## Write the target down before touching code
 
 The work is finished when the tree matches three documents, so write them first. They are the
-measuring sticks for the exit checklist; without them "done" is an opinion.
+measuring sticks for the exit checklist; without them "done" is an opinion. They live in the package as
+`docs/module-map.md`, `docs/baseline.md` (with the test mapping) and `docs/consumers.md`; tasks filed
+with no tracker go in `docs/follow-ups.md`.
 
 1. **The module map**: the units the tool will have, the allowed dependency edges between them, and
    one sentence per unit saying what it is responsible for. A unit whose sentence needs "and" is two
@@ -106,10 +108,12 @@ in the first PR's description. Every PR:
 - builds from the committed lockfile and passes the project's gates (the language skill names them),
   plus every dependent consumer's own test command;
 - leaves `main` deployable;
-- states which kind of work it is, **new behavior** or **pure move**, with the evidence
-  [`TESTING.md`](TESTING.md) demands for that kind;
+- states which kind of work it is, **new behavior**, **pure move**, or **move with a recorded change**
+  (a move that also fixes a behavior by decision: the decision record names it and the differential
+  shows exactly that delta), with the evidence [`TESTING.md`](TESTING.md) demands for that kind;
 - for a tool with a command-line surface, passes a differential over the frozen surface against the
   binary built from the previous `main`, **with a control mutant the differential is shown to catch**.
+  A PR that changes no production code says so in place of the differential.
   A differential without a failing control proves nothing: one harness compared a file with itself and
   reported zero mismatches against a broken binary;
 - is small enough to review in one sitting. Decompose by behavior before starting.

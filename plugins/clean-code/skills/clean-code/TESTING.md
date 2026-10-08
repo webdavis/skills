@@ -15,7 +15,7 @@ guarantees, every new typed outcome, and any behavior a specification states but
 before and after. Before moving code, confirm its behavior is pinned by a test that can fail; if not,
 write that test against the code where it is now and land it before the move. The move is then
 verified by the test-name set diff and, for a tool with a command surface, the differential against
-the previous `main`.
+the previous `main`; it owes no mutation table.
 
 State in each pull request which kind it is, and give the matching evidence.
 

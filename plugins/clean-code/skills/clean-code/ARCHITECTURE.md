@@ -74,7 +74,8 @@ states; the adapter translates them explicitly.
 No universal `Plugin` interface with optional methods or capability booleans. Separate interfaces and
 registries per role: destination, stateful indicator, sensor, diagnostic check, scheduled job. A
 registry holds implementations, not names. A closed set of command words decodes into an enum in the
-CLI role; a registry is for an open set, and a closed one is not a dispatch smell. A destination carries an identity, a declared capability
+CLI role; a registry is for an open set, and a closed one is not a dispatch smell. A destination
+carries an identity, a declared capability
 set and one delivery operation returning a typed outcome.
 
 Remove central dispatch that switches on names. Adding a built-in destination requires its adapter,

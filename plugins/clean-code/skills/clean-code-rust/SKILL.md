@@ -68,9 +68,12 @@ Five roles. A tool over about 1,000 production lines takes five crates in one Ca
     crates/<tool>-cli          # [[bin]] name = "<tool>", because callers invoke it by that name
 
 Under that size the tool is one crate with one module per role (`domain`, `application`, `protocol`,
-`adapters`, `cli`), the same edges held by `pub(crate)` visibility and a test that fails when the
-domain module names `std::fs`, `std::env`, `std::process` or a crate outside `std`. The module map
-says which form the tool takes; a module becomes a crate when it passes the hard limit or a second
+`adapters`, `cli`), the edges held by one test that scans every module's `use` lines against the
+module map (`use crate::{a::X, b::Y}` groups and `super::super` paths included, each form proven by a
+hostile fixture the scan rejects), because `pub(crate)` cannot hold an edge between sibling modules
+and the compiler sees none. The domain row of that scan also refuses `std::fs`, `std::env`,
+`std::process` and any crate outside `std`. The module map says which form the tool takes; a module
+becomes a crate when it passes the hard limit or a second
 binary or consumer needs it on its own. An eval run split a 110-line CLI into five crates and a
 test-support crate because this page once said "five crates" with no condition.
 
@@ -82,7 +85,9 @@ and fails if any non-dev dependency appears; that is the exit checklist's "manif
 runs the same toolchain everywhere. The exit checklist's boundary command is the edge list
 `cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | .name as $n | .dependencies[] |
 select(.kind == null) | "\($n) -> \(.name)"' | sort` diffed against the module map, plus
-`cargo check --workspace --all-targets --locked`; in the one-crate form it is the domain import test.
+`cargo check --workspace --all-targets --locked`; in the one-crate form it is the module scan above,
+and
+the exit checklist's "manifest test" row is that scan's domain row.
 
 The domain crate excludes filesystem access, SQLite, TOML, JSON, HTTP, environment variables,
 process spawning, platform APIs, vendor APIs, executable discovery and CLI output. `std` only, unless
@@ -151,10 +156,13 @@ the completion report shows the grep that counts one guard per test. A contract 
 implementations is a `pub` module of the crate that owns the port, behind a `contract-suite` feature
 the adapter crates enable as a dev-dependency.
 
-Take the baseline without touching the real home: `cargo test --no-run`, then run each test binary
-under `target/debug/deps` with `env -i HOME=<throwaway> PATH=$PATH`. `HOME=<x> cargo test` does not
-work, because rustup resolves the toolchain from `HOME`; an eval run wrote to the real `~/.tally`
-that way.
+Baseline and gates alike run with a throwaway home and the toolchain pinned:
+`HOME=<throwaway> RUSTUP_HOME=${RUSTUP_HOME:-$HOME/.rustup} CARGO_HOME=${CARGO_HOME:-$HOME/.cargo}
+cargo test --workspace --no-fail-fast --locked`. Without the two pins rustup looks for its toolchains
+under the throwaway home and starts downloading one; without the throwaway home a legacy test that
+writes under `~` lands in the real one (an eval run created `~/.tally` that way). A baseline tree
+that already fails a gate (`cargo fmt --check` on unformatted code) gets a style-only first commit,
+named as such in PR 1.
 
 Tooling: if `cargo mutants` is installed, run it on the changed crates and paste the summary as the
 mutation table's evidence, with the control being its baseline run; otherwise produce the rows by
