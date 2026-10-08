@@ -150,6 +150,25 @@ These are what make a register row worth recording.
 - **Every fixer answers in writing:** does anything I added admit the state I was fixing, or its
   mirror, or assert something I did not measure? When a fix replaces a check rather than adding one,
   list what the old check caught that the new one does not.
+- **A review is one pass over the diff.** It ends when every added or changed line has been read
+  against the charter, and its output is one findings table plus the verdict line, about a screen.
+  Other interpreter versions, locales, fuzzing and probe scripts are out of scope unless the brief
+  names them as a contract; a reviewer that wants them writes one line in the out-of-scope section
+  and moves on. An eval run spent fifty minutes on the first review of a one-line change this way.
+
+## Bounds
+
+A slice has a length, and the length is written down before the work starts, because "make it
+correct" has no natural end.
+
+- **Forecast every step** in the argument log before step 1 (minutes per step, as the loop skill's
+  table suggests, scaled to the diff: a change under twenty lines takes about a tenth of the typical
+  numbers). Write the actual beside each forecast as the step ends.
+- **Twice the forecast stops the step.** Record what was done and what was not as a `[DEV]` with the
+  reason, and move on; the checklist accepts the deviation and the next step reads it. Never extend a
+  step because it feels nearly finished.
+- **Every step runs once.** Dispatch each step exactly once; a second fix round earns no second
+  review; 6v and step 7 are terminal.
 
 ## Who runs each step
 
@@ -166,6 +185,12 @@ already on it first; two agents on one step race the worktree. Once 4b is dispat
 done: route any late refinement to 4b. Retry a failed reviewer once, then substitute a write-capable
 agent and record the deviation. "The run died" needs positive evidence: an error marker, a refusal
 string, or a process exit plus an empty output on a second check after a settling delay.
+
+**One agent, every role.** When no agent can be dispatched, play the roles in sequence: write each
+review as its own section with its charter at the top and the verdict line at the bottom, treat each
+as one pass over the diff, and record a single deviation ("self-review: one agent held every role")
+under `## Deviations`. The verifiers accept that; what they do not accept is a review that never
+ends.
 
 ## Merging
 

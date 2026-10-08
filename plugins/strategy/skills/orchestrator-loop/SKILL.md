@@ -85,11 +85,12 @@ replaced by a constant.
 
 ## Budget
 
-Forecast each step before starting (a typical slice: tests 10 minutes, implement 15, the two reviews in
-parallel 15, fixes 10, push and merge 12) and re-forecast against the measured numbers as they
-arrive. Review time scales with charter breadth and diff size, so a narrow charter on a small diff is
-minutes, not an hour; keep both small rather than budgeting around a wide one. When a step runs past
-twice its forecast, write why in the argument log before continuing.
+Forecast each step before starting and write the forecasts in the argument log (a typical
+multi-agent slice: tests 10 minutes, implement 15, the two reviews in parallel 15, fixes 10, push and
+merge 12; a change under twenty lines takes about a tenth of that). Re-forecast against the measured
+numbers as they arrive. Review time scales with charter breadth and diff size, so a narrow charter on
+a small diff is minutes, not an hour. Twice the forecast stops the step: record the deviation and move
+on, as [ledger](../ledger/SKILL.md) says under Bounds.
 
 ## Exit test
 
