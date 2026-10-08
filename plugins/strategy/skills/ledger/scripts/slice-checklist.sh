@@ -4,6 +4,7 @@
 #   slice-checklist.sh new <slug> <open|closed|orchestrator> [--security] [dir]
 #   slice-checklist.sh verify <checklist.md> --repo <repo>
 #   slice-checklist.sh steps <open|closed|orchestrator> [--security]
+#   slice-checklist.sh tick <checklist.md> <step> [--dev] <evidence>
 #
 # verify exits 0 when every step is ticked ([x]) with evidence of the right kind, or marked
 # [DEV] with a reason in its evidence cell and a matching line under "## Deviations".
@@ -14,7 +15,7 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 usage() {
-  sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//' >&2
+  sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//' >&2
   exit 2
 }
 
@@ -40,6 +41,27 @@ new_checklist() {
     printf '\n## Deviations\n\n'
   } >"$file"
   printf '%s\n' "$file"
+}
+
+# tick <file> <step> [--dev] <evidence>: fill one row's box and evidence cell in place.
+tick_row() {
+  local file=$1 step=$2 mark=$3 evidence=$4 tmp
+  [[ -f $file ]] || {
+    fail_line "no such checklist: $file"
+    exit 2
+  }
+  [[ $evidence != *'|'* ]] || {
+    fail_line "evidence may not contain |"
+    exit 1
+  }
+  grep -qE "^\| \[[^]]*\] \| $step \|" "$file" || {
+    fail_line "no row for step $step in $file"
+    exit 1
+  }
+  tmp=$(mktemp)
+  STEP=$step MARK=$mark EV=$evidence awk -F'|' 'BEGIN { OFS = "|" }
+    NF == 7 && $3 == " " ENVIRON["STEP"] " " && $2 ~ /^ \[/ { $2 = " " ENVIRON["MARK"] " "; $6 = " " ENVIRON["EV"] " " }
+    { print }' "$file" >"$tmp" && mv "$tmp" "$file"
 }
 
 print_steps() {
@@ -159,6 +181,16 @@ main() {
       done
       [[ -n $slug && -n $loop ]] || usage
       new_checklist "$slug" "$loop" "$security" "$dir"
+      ;;
+    tick)
+      local file=${1:-} step=${2:-} mark='[x]'
+      shift 2 2>/dev/null || usage
+      [[ ${1:-} == --dev ]] && {
+        mark='[DEV]'
+        shift
+      }
+      [[ -n $file && -n $step && $# -ge 1 ]] || usage
+      tick_row "$file" "$step" "$mark" "$*"
       ;;
     verify)
       local file=${1:-} repo=""

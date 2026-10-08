@@ -4,6 +4,8 @@
 #
 #   findings-register.sh new <slug> <open|closed|orchestrator> [--security] [dir]
 #   findings-register.sh verify <findings.md> --repo <repo> [--tasks <file>]
+#   findings-register.sh verdict <findings.md> <step> <verdict>
+#   findings-register.sh add <findings.md> <id> <step> <severity> <summary> <disposition> <evidence>
 #
 # Rows start with "| F". Severity is CRITICAL, HIGH, MEDIUM or LOW. Dispositions:
 #   FIXED         a commit that resolves + a named test + "RED ... GREEN" or "SURVIVED ... KILLED"
@@ -19,7 +21,7 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 usage() {
-  sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//' >&2
+  sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//' >&2
   exit 2
 }
 
@@ -45,6 +47,48 @@ new_register() {
     printf '| F0 | 4a | LOW | example row, delete this row | ACCEPTED | shows the shape |\n'
   } >"$file"
   printf '%s\n' "$file"
+}
+
+# verdict <file> <step> <verdict>: fill one declared-verdict cell in place.
+set_declared_verdict() {
+  local file=$1 step=$2 verdict=$3 tmp
+  [[ -f $file ]] || {
+    fail_line "no such register: $file"
+    exit 2
+  }
+  [[ $verdict != *'|'* ]] || {
+    fail_line "a verdict may not contain |"
+    exit 1
+  }
+  grep -qE "^\| $step \| " "$file" || {
+    fail_line "no declared-verdict row for step $step in $file"
+    exit 1
+  }
+  tmp=$(mktemp)
+  STEP=$step V=$verdict awk -F'|' 'BEGIN { OFS = "|" }
+    NF == 4 && $2 == " " ENVIRON["STEP"] " " { $3 = " " ENVIRON["V"] " " }
+    { print }' "$file" >"$tmp" && mv "$tmp" "$file"
+}
+
+# add <file> <id> <step> <severity> <summary> <disposition> <evidence>: append one finding row.
+add_finding() {
+  local file=$1 cell
+  shift
+  [[ -f $file ]] || {
+    fail_line "no such register: $file"
+    exit 2
+  }
+  [[ $1 =~ ^F[1-9][0-9]*$ ]] || {
+    fail_line "id must be F1, F2, ...: $1"
+    exit 1
+  }
+  for cell in "$@"; do
+    [[ $cell != *'|'* ]] || {
+      fail_line "a cell may not contain |"
+      exit 1
+    }
+  done
+  printf '| %s | %s | %s | %s | %s | %s |\n' "$@" >>"$file"
 }
 
 named_test() {
@@ -211,6 +255,18 @@ main() {
       done
       [[ -n $slug && -n $loop ]] || usage
       new_register "$slug" "$loop" "$security" "$dir"
+      ;;
+    verdict)
+      local file=${1:-} step=${2:-}
+      shift 2 2>/dev/null || usage
+      [[ -n $file && -n $step && $# -ge 1 ]] || usage
+      set_declared_verdict "$file" "$step" "$*"
+      ;;
+    add)
+      local file=${1:-}
+      shift || usage
+      (($# == 6)) || usage
+      add_finding "$file" "$@"
       ;;
     verify)
       local file=${1:-} repo="" tasks=""

@@ -29,24 +29,14 @@ expect() {
 }
 
 tick() {
-  # tick <file> <step> <mark> <evidence>: fill one checklist row
-  local file=$1 step=$2 mark=$3 evidence=$4
-  python3 - "$file" "$step" "$mark" "$evidence" <<'EOF'
-import sys, re
-f, step, mark, ev = sys.argv[1:]
-lines = open(f).read().split("\n")
-for i, l in enumerate(lines):
-    cells = [c.strip() for c in l.split("|")]
-    if len(cells) > 3 and cells[2] == step and cells[1].startswith("["):
-        cells[1] = mark; cells[5] = ev
-        lines[i] = "| " + " | ".join(cells[1:6]) + " |"
-open(f, "w").write("\n".join(lines))
-EOF
+  # tick <file> <step> <mark> <evidence>: fill one checklist row through the script itself
+  local dev=()
+  [[ $3 == '[DEV]' ]] && dev=(--dev)
+  "$here/slice-checklist.sh" tick "$1" "$2" ${dev[@]+"${dev[@]}"} "$4" >/dev/null
 }
 
 set_verdict() {
-  local file=$1 step=$2 verdict=$3
-  sed -i '' "s/^| $step | |$/| $step | $verdict |/" "$file"
+  "$here/findings-register.sh" verdict "$1" "$2" "$3" >/dev/null
 }
 
 add_row() {
@@ -73,6 +63,9 @@ tick "$cl" 7 '[x]' 'VERDICT: NO_ISSUE'
 tick "$cl" 8 '[x]' 'none'
 tick "$cl" 9 '[x]' '#42'
 expect pass "complete open checklist" "$here/slice-checklist.sh" verify "$cl" --repo "$repo"
+expect fail "tick refuses an unknown step" "$here/slice-checklist.sh" tick "$cl" 42 'nothing'
+expect fail "tick refuses a pipe in the evidence" "$here/slice-checklist.sh" tick "$cl" 8 'a | b'
+expect pass "complete open checklist after the refused ticks" "$here/slice-checklist.sh" verify "$cl" --repo "$repo"
 tick "$cl" 3 '[x]' 'deadbeef'
 expect fail "commit that does not resolve" "$here/slice-checklist.sh" verify "$cl" --repo "$repo"
 tick "$cl" 3 '[x]' "$sha"
@@ -97,7 +90,8 @@ set_verdict "$rg" 4a 'FINDINGS (2)'
 set_verdict "$rg" 4b 'VERDICT: CLEAN'
 set_verdict "$rg" 7 'VERDICT: NO_ISSUE'
 add_row "$rg" "F1 | 4a | HIGH | guard off by one | FIXED | $sha test \"boundary at 10\" RED to GREEN"
-add_row "$rg" "F2 | 4a | LOW | naming | TASK #7"
+expect fail "add refuses an id that is not F<n>" "$here/findings-register.sh" add "$rg" 2 4a LOW naming 'TASK #7' ''
+"$here/findings-register.sh" add "$rg" F2 4a LOW naming 'TASK #7' '' >/dev/null
 expect fail "TASK row without a manifest" "$here/findings-register.sh" verify "$rg" --repo "$repo"
 printf '#7 rename the helper\n' >"$ledgers/tasks.txt"
 expect pass "open register with one fix and one filed task" "$here/findings-register.sh" verify "$rg" --repo "$repo" --tasks "$ledgers/tasks.txt"

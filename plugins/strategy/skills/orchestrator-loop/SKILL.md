@@ -54,11 +54,13 @@ the table omits it rather than making you record a deviation for a review that w
 **Confirm the assumptions ledger before writing red.** Here a wrong assumption does not become a
 wrong paragraph; it becomes a wrong test that then passes.
 
-**Step 1's evidence is the red commit.** The tests must fail on it for the reason the slice exists,
-not for a missing import: run them once and keep the failure output beside the ledgers.
+**Step 1's evidence is the red commit.** Every added test fails on it for the reason the slice exists,
+not for a missing import, or is named a guard in the argument log: run them once and keep the failure
+output beside the ledgers. A test that passes by accident on the old code catches nothing later.
 
-**Step 3's implementer gets the tests, the argument log and nothing to decide about scope.** Where an
-original implementation exists it also ships a differential check against it.
+**Step 3's implementer gets the tests, the argument log and nothing to decide about scope.** Where the
+slice replaces an implementation, step 3 also runs a differential against the version on `main` and
+keeps the output beside the ledgers.
 
 **Findings land before the next slice starts.** Independent slices may run in parallel, each with its
 own records; nothing carries over between them.
@@ -87,7 +89,8 @@ replaced by a constant.
 ## Budget
 
 Forecast each step before starting, as [ledger](../ledger/SKILL.md) says under Bounds; this loop has
-no brief steps, so those numbers fall away. Re-forecast against the measured numbers as they arrive.
+no brief steps, so those numbers fall away. Re-forecast the steps still ahead as measured numbers
+arrive; a running step keeps the forecast it started with.
 Review time scales with charter breadth and diff size, so a narrow charter on a small diff is minutes,
 not an hour. Twice the forecast stops the step: record the deviation and move on.
 

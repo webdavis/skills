@@ -29,7 +29,14 @@ $S/slice-checklist.sh  steps <loop> [--security]            # print the step tab
 $S/slice-checklist.sh  verify <dir>/checklist-<slug>.md --repo <repo>
 $S/findings-register.sh verify <dir>/findings-<slug>.md --repo <repo> [--tasks <file>]
 $S/pipeline-merge.sh   <pr> <slug> --repo <repo> --dir <dir> [--tasks <file>]
+
+$S/slice-checklist.sh  tick <dir>/checklist-<slug>.md <step> [--dev] <evidence>   # fill a row
+$S/findings-register.sh verdict <dir>/findings-<slug>.md <step> <verdict>         # fill a declared verdict
+$S/findings-register.sh add <dir>/findings-<slug>.md <id> <step> <severity> <summary> <disposition> <evidence>
 ```
+
+`tick`, `verdict` and `add` edit the records in place and refuse a `|` inside a cell, because the
+tables split on it; a hand edit that keeps the table shape is just as good.
 
 `new` refuses to overwrite: a second `new` on a slug is an error, not a reset. `--security` adds step
 4a-s, the security review; pass it when the slice touches authentication, credentials, secrets, a
@@ -87,8 +94,13 @@ count out of it (the first `(N)`, otherwise the first `N finding`, otherwise zer
 `NO_ISSUE` or `VERDICT: PASS`, so `VERDICT: PASS (1)` reads 1) and compares it with the rows that
 cite the step. `FINDINGS (5)` against three
 rows means two findings vanished on the way to the ledger, and the gate says so. `FAIL` never reads as
-zero. `n/a` means the review did not run, and then no row may cite it. A verdict it cannot read fails,
-so carry the count beside prose (`3 findings`).
+zero. `n/a` means the review never started, and then no row may cite it. A verdict it cannot read
+fails, so carry the count beside prose (`3 findings`).
+
+Step 5 writes every row's id, step, severity, summary and disposition and leaves the register as its
+evidence; a `FIXED` row's commit is filled in when step 6 or 6v creates it. A finding that does not
+reproduce stays as a row, `ACCEPTED` with the measurement that failed to reproduce it, so the
+reviewer's declared count still reconciles.
 
 Deferring at least as many findings as you fix prints an OVER-DEFERRAL warning. Loud, not fatal:
 explain it in the PR body.
@@ -119,7 +131,7 @@ re-litigates round one.
 Before the brief, and before asking anything, write down what the tree already answers as one numbered
 batch, each line with its source (`path:line`, a spec section, a plan line, a convention), measured
 with `git show origin/main:<path> | grep -n` (`main` when the repository has no remote), never a
-working copy:
+working copy; a claim about behaviour is measured by running that version, not by reading it:
 
 ```markdown
 ## Assumptions ledger
@@ -192,16 +204,21 @@ correct" has no natural end.
 - **Forecast every step** in the argument log before step 1, in whole minutes. A typical multi-agent
   slice: brief 10, brief review 10, failing tests 10, implement 15, each review 15 (they run in
   parallel), 4c 5, adjudication 5, fixes 10, re-review or 6v 5, tasks 2, push and merge 12. A change
-  under twenty production lines (test lines not counted) takes about a tenth of that, rounded up to a
-  minute, and one agent runs the parallel steps in sequence, so its forecast is their sum. Write the
-  actual beside each forecast as the step ends. A step starts when the previous one ends and includes
-  its own bookkeeping (ticking the row, writing the log); reading the skills and the repository before
-  step 1 is no step and is not forecast.
+  under twenty production lines (test lines not counted) takes about a tenth of that. Forecast per
+  step, because the stop is per step: scale each number, round it up to a whole minute, and never
+  forecast under two minutes (the bookkeeping alone, ticking the row and writing the log, is part of
+  the step). One agent runs the parallel reviews in sequence, each on its own forecast. Opening the
+  records, the assumptions ledger and the forecasts is the start of step 1 and counts against it;
+  reading the skills and the repository before that is no step and is not forecast. Write the actual
+  beside each forecast as the step ends.
 - **Twice the forecast stops the step.** Record what was done and what was not as a `[DEV]` with the
   reason, and move on; the checklist accepts the deviation and the next step reads it. Never extend a
-  step because it feels nearly finished. Stopping means handing on what exists: a half-written brief
-  goes to step 2 as it stands and step 2 says what is missing. The clock is wall time; a stall is part
-  of the reason, not a pause.
+  step because it feels nearly finished. The stop uses the forecast the step started with; a
+  re-forecast changes only the steps still ahead. A command already running finishes; nothing new
+  starts after the mark. Stopping means handing on what exists: a half-written brief goes to step 2 as
+  it stands and step 2 says what is missing; a stopped review declares `NEW_ISSUE (N)` for the N
+  findings it has so far (`n/a` is only for a review that never started), and 4b's worktree edits
+  still merge. The clock is wall time; a stall is part of the reason, not a pause.
 - **Every step runs once.** Dispatch each step exactly once; a second fix round earns no second
   review; 6v and step 7 are terminal.
 
@@ -229,8 +246,9 @@ ends.
 
 ## Merging
 
-Gates are the project's own checks (tests, lint, format), named in the brief and run with the output
-quoted at 6v or step 7 and again before the merge. The verifiers check the records:
+Gates are the project's own checks (tests, lint, format), named in the brief (in the assumptions
+ledger under orchestrator-loop, which has no brief) and run with the output quoted at 6v or step 7
+and again before the merge. The verifiers check the records:
 `pipeline-merge.sh` runs both, refuses on either, and on success posts their output as a
 comment on the PR and prints the merge command. It never merges for you. The comment is the artifact:
 a PR merged around the gate is visible afterwards by carrying none. The command is a merge commit,
