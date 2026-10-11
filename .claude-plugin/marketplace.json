@@ -18,6 +18,11 @@
       "name": "tiktok-crawling",
       "source": "./plugins/tiktok-crawling",
       "description": "TikTok crawling, content retrieval and analysis with yt-dlp."
+    },
+    {
+      "name": "tech-support",
+      "source": "./plugins/tech-support",
+      "description": "Support-desk skills: the Pylon case note in one fixed shape, with the draft customer reply copied to the clipboard."
     }
   ]
 }

@@ -7,6 +7,7 @@ Agent skills, each shipped as a Claude Code plugin so it installs the same way e
 | `strategy` | `open-loop`, `closed-loop`, `orchestrator-loop`, `ledger` | Three slice pipelines and the ledger scripts that gate their merges; install the plugin whole, the loops read `../ledger/` |
 | `clean-code` | `clean-code`, `clean-code-rust`, `clean-code-swift` | The clean-code method for layered tools; the language skills own the numbers, so install the plugin whole |
 | `tiktok-crawling` | `tiktok-crawling` | TikTok crawling, metadata export and analysis with yt-dlp (based on RomneyDa's ClawHub skill) |
+| `tech-support` | `pylon-note` | The internal case note for a Pylon ticket about a call an AI phone agent handled, in one fixed shape, with the draft customer reply copied to the clipboard |
 
 ## Install
 
@@ -32,6 +33,7 @@ codex plugin add clean-code@webdavis
 npx skills@latest add webdavis/skills
 npx skills@latest add webdavis/skills/plugins/clean-code
 npx skills@latest add webdavis/skills/plugins/tiktok-crawling/skills/tiktok-crawling
+npx skills@latest add webdavis/skills/plugins/tech-support
 ```
 
 **Hermes Agent** (one skill at a time, by path):
