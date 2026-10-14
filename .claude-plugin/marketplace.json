@@ -23,6 +23,11 @@
       "name": "tech-support",
       "source": "./plugins/tech-support",
       "description": "Support-desk skills: the Pylon case note in one fixed shape, with the draft customer reply copied to the clipboard."
+    },
+    {
+      "name": "git",
+      "source": "./plugins/git",
+      "description": "Git and GitHub flows: one conventional commit at a time, pull requests through gh-axi, worktrunk-aware branch cleanup."
     }
   ]
 }

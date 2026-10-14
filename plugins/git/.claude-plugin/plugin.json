@@ -1,0 +1,5 @@
+{
+  "name": "git",
+  "description": "Git and GitHub flows: one conventional commit at a time, pull requests through gh-axi, worktrunk-aware branch cleanup.",
+  "version": "0.1.0"
+}
