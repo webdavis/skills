@@ -1,5 +1,0 @@
-{
-  "name": "strategy",
-  "description": "Three slice pipelines (open-loop, closed-loop, orchestrator-loop) and the ledger that verifies them.",
-  "version": "0.2.0"
-}

@@ -5,11 +5,6 @@
   },
   "plugins": [
     {
-      "name": "strategy",
-      "source": "./plugins/strategy",
-      "description": "Three slice pipelines (open-loop, closed-loop, orchestrator-loop) and the ledger that verifies them."
-    },
-    {
       "name": "clean-code",
       "source": "./plugins/clean-code",
       "description": "The clean-code method for layered tools, with its Rust and Swift spellings."
