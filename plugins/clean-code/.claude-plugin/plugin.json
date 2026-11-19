@@ -1,5 +1,5 @@
 {
   "name": "clean-code",
-  "description": "The clean-code method for layered tools, with its Rust and Swift spellings.",
-  "version": "0.2.0"
+  "description": "The clean-code method for layered tools, with its Rust and Swift spellings, and a detector for code that says one thing and does another.",
+  "version": "0.3.0"
 }
