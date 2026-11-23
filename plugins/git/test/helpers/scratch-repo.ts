@@ -1,6 +1,6 @@
-import { mkdtempSync, realpathSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 export class ScratchRepo {
   readonly path = realpathSync(mkdtempSync(join(tmpdir(), "git-completion-")));
@@ -32,6 +32,22 @@ export class ScratchRepo {
 
   detachedWorktree(): this {
     this.git("worktree", "add", "--quiet", "--detach", `${this.path}-detached`);
+    return this;
+  }
+
+  onGitHub(...branches: string[]): this {
+    const origin = `${this.path}-origin`;
+    Bun.spawnSync(["git", "init", "--quiet", "--bare", origin]);
+    this.git("remote", "add", "origin", origin);
+    for (const branch of branches) this.git("push", "--quiet", "origin", `HEAD:refs/heads/${branch}`);
+    this.git("fetch", "--quiet", "origin");
+    this.git("remote", "set-head", "origin", branches[0]!);
+    return this;
+  }
+
+  file(path: string): this {
+    mkdirSync(join(this.path, dirname(path)), { recursive: true });
+    writeFileSync(join(this.path, path), "");
     return this;
   }
 
