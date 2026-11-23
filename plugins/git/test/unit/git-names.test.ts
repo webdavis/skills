@@ -13,6 +13,22 @@ test("branches answers nothing outside a git repository", async () => {
   expect(await makeSUT(notARepository()).branches()).toEqual([]);
 });
 
+test("worktrees answers the branch of every worktree", async () => {
+  const repo = new ScratchRepo().branch("feature-a").worktree("feature-b").worktree("feature-c");
+
+  expect(await makeSUT(repo.path).worktrees()).toEqual(["main", "feature-b", "feature-c"]);
+});
+
+test("worktrees leaves out a worktree with no branch checked out", async () => {
+  const repo = new ScratchRepo().detachedWorktree();
+
+  expect(await makeSUT(repo.path).worktrees()).toEqual(["main"]);
+});
+
+test("worktrees answers nothing outside a git repository", async () => {
+  expect(await makeSUT(notARepository()).worktrees()).toEqual([]);
+});
+
 function makeSUT(cwd: string) {
   return new GitNames(new ShellGit(cwd));
 }

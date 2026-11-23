@@ -26,14 +26,12 @@ export class ScratchRepo {
   }
 
   worktree(branch: string): this {
-    this.git(
-      "worktree",
-      "add",
-      "--quiet",
-      "-b",
-      branch,
-      join(this.path, "..", `${this.path.split("/").pop()}-${branch}`),
-    );
+    this.git("worktree", "add", "--quiet", "-b", branch, `${this.path}-${branch}`);
+    return this;
+  }
+
+  detachedWorktree(): this {
+    this.git("worktree", "add", "--quiet", "--detach", `${this.path}-detached`);
     return this;
   }
 
