@@ -2,7 +2,7 @@
 name: conventional-commits
 description: Formats commit messages using the Conventional Commits specification. Use when creating commits, writing commit messages, or when the user mentions commits, git commits, or commit messages. Ensures commits follow the standard format for automated tooling, changelog generation, and semantic versioning.
 license: MIT
-user-invocable: false
+disable-model-invocation: true
 metadata:
   author: github.com/bastos
   version: "2.1"

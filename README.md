@@ -6,7 +6,7 @@ Agent skills, each shipped as a Claude Code plugin so it installs the same way e
 | --- | --- | --- |
 | `clean-code` | `clean-code`, `clean-code-rust`, `clean-code-swift`, `bullshit-detector`, `depgraph` | The clean-code method for layered tools; the language skills own the numbers, so install the plugin whole. `bullshit-detector` finds code that says one thing and does another, such as a vague name or a script that claims sh but needs bash. `depgraph` draws a dependency diagram of the repository as a picture, runs only when you call it, and needs the `d2` program |
 | `tiktok-crawling` | `tiktok-crawling` | TikTok crawling, metadata export and analysis with yt-dlp (based on RomneyDa's ClawHub skill) |
-| `git` | `commit`, `amend`, `uncommit`, `commit-push-pr`, `pr`, `pr-merge`, `clean-gone`, `sync-worktrees`, `conventional-commits` | Git and GitHub flows for an agent: one conventional commit at a time, pull requests through gh-axi, worktrunk-aware branch cleanup; `conventional-commits` is the message spec the others read, so install the plugin whole |
+| `git` | `git`, `commit`, `amend`, `pr`, `merge`, `worktree`, `clean`, `conventional-commits` | Git and GitHub flows for an agent: `git` holds the rules for worktrees, commits, pull requests and merging and is the only skill a model loads on its own; the rest run when named. `conventional-commits` is the message spec the others read, so install the plugin whole |
 
 ## Install
 
@@ -43,4 +43,12 @@ npx skills@latest add webdavis/skills/plugins/git
 hermes skills install webdavis/skills/plugins/clean-code/skills/clean-code
 hermes skills install webdavis/skills/plugins/tiktok-crawling/skills/tiktok-crawling
 hermes skills install webdavis/skills/plugins/git/skills/conventional-commits
+```
+
+## Turning on the `git` plugin's rules
+
+Copy this line into an `AGENTS.md` (or `CLAUDE.md`) so agents load the `git` skill before any work:
+
+```
+Load the `git` skill before working in a git repository.
 ```

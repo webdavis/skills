@@ -1,0 +1,49 @@
+{
+  "skill_name": "worktree",
+  "setup_common": "set -euo pipefail\ngit init -q --bare -b main origin.git\ngit init -q -b main app\ncd app\ngit config user.name \"Test Owner\"\ngit config user.email owner@example.com\nprintf 'import sys\\n\\n\\ndef greet(name):\\n    return f\"Hello, {name}.\"\\n\\n\\nif __name__ == \"__main__\":\\n    print(greet(sys.argv[1] if len(sys.argv) > 1 else \"world\"))\\n' > greet.py\nprintf 'import unittest\\n\\nfrom greet import greet\\n\\n\\nclass GreetTest(unittest.TestCase):\\n    def test_greets_by_name(self):\\n        self.assertEqual(greet(\"Ann\"), \"Hello, Ann.\")\\n' > test_greet.py\nprintf 'test:\\n\\tpython3 -m unittest -q\\n' > Makefile\nprintf '__pycache__/\\n' > .gitignore\nprintf 'Load the `git` skill before working in a git repository.\\n' > AGENTS.md\ngit add -A\ngit commit -qm \"feat: greet by name\"\ngit remote add origin ../origin.git\ngit push -qu origin main\n",
+  "check_helpers": "feature_branch() { git for-each-ref --format='%(refname:short)' refs/heads | grep -vx main | head -1; }\nno_pr() { ! grep -E -q '(gh|gh-axi)[^\"]*pr (create|merge)' \"$T\"; }\nclean_tree() { [ -z \"$(git -C \"${1:-.}\" status --porcelain)\" ]; }\nconventional() { git log -1 --format=%s \"${1:-HEAD}\" | grep -E -q '^[a-z]+(\\([^)]+\\))?!?: [^ ]'; }\nno_trailers() { ! git log --format=%B \"$MAIN0..${1:-HEAD}\" | grep -E -i -q 'co-authored|generated with|signed-off|claude|codex'; }\nloaded_git_before_edit() { python3 - \"$T\" <<'PY'\nimport json, re, sys\nacts = []\nfor l in open(sys.argv[1]):\n    try: e = json.loads(l)\n    except Exception: continue\n    if e.get(\"type\") == \"assistant\":\n        acts += [json.dumps(c) for c in e[\"message\"].get(\"content\", []) if c.get(\"type\") == \"tool_use\"]\ng = next((i for i, a in enumerate(acts) if re.search(r'\"skill\": \"git(:git)?\"|/git/SKILL\\.md', a)), None)\ne = next((i for i, a in enumerate(acts) if re.search(r'\"name\": \"(Edit|Write|MultiEdit)\"|greet\\.py <<|> *greet\\.py|sed -i', a)), None)\nsys.exit(0 if g is not None and (e is None or g < e) else 1)\nPY\n}",
+  "evals": [
+    {
+      "id": 1,
+      "name": "create-new-branch-from-origin-main",
+      "prompt": "/git:worktree feat/bye",
+      "baseline_prompt": "Make a worktree for a new branch feat/bye.",
+      "setup": "",
+      "expected_output": "A new worktree on feat/bye, branched from origin/main, with branch.feat/bye.base and baseTip recorded.",
+      "files": [],
+      "expectations": [
+        "a worktree exists for feat/bye",
+        "feat/bye starts at origin/main",
+        "branch.feat/bye.base is origin/main",
+        "branch.feat/bye.baseTip is origin/main's commit"
+      ],
+      "checks": [
+        "git worktree list | grep -q \"\\[feat/bye\\]\"",
+        "[ \"$(git rev-parse feat/bye)\" = \"$(git rev-parse origin/main)\" ]",
+        "[ \"$(git config branch.feat/bye.base)\" = origin/main ]",
+        "[ \"$(git config branch.feat/bye.baseTip)\" = \"$(git rev-parse origin/main)\" ]"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "catchup-rebases-onto-new-main",
+      "prompt": "/git:worktree catchup",
+      "baseline_prompt": "Catch my feat/shout worktree up with main.",
+      "setup": "git worktree add -q -b feat/shout ../app.feat-shout main\ncd ../app.feat-shout\nprintf 'import sys\\n\\n\\ndef greet(name, shout=False):\\n    text = f\"Hello, {name}.\"\\n    return text.upper() if shout else text\\n\\n\\nif __name__ == \"__main__\":\\n    args = [a for a in sys.argv[1:] if a != \"--shout\"]\\n    print(greet(args[0] if args else \"world\", \"--shout\" in sys.argv))\\n' > greet.py\nprintf '\\n    def test_shouts(self):\\n        self.assertEqual(greet(\"Ann\", shout=True), \"HELLO, ANN.\")\\n' >> test_greet.py\ngit add -A && git commit -qm \"feat: add --shout\" && cd ../app\ngit config branch.feat/shout.base origin/main\ngit config branch.feat/shout.baseTip \"$(git rev-parse main)\"\nprintf 'A greeter.\\n' > README.md && git add README.md && git commit -qm 'docs: add a README' && git push -q",
+      "expected_output": "feat/shout is rebased onto the new origin/main, keeps its one commit, and its baseTip is updated.",
+      "files": [],
+      "expectations": [
+        "feat/shout is built on the new origin/main",
+        "feat/shout keeps exactly one commit of its own",
+        "branch.feat/shout.baseTip is the new origin/main",
+        "the tests pass on feat/shout"
+      ],
+      "checks": [
+        "[ \"$(git merge-base feat/shout origin/main)\" = \"$(git rev-parse origin/main)\" ]",
+        "[ \"$(git rev-list --count origin/main..feat/shout)\" -eq 1 ]",
+        "[ \"$(git config branch.feat/shout.baseTip)\" = \"$(git rev-parse origin/main)\" ]",
+        "make -C ../app.feat-shout test"
+      ]
+    }
+  ]
+}
