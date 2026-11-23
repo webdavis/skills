@@ -29,9 +29,19 @@ function worktree(earlier: string[]): NextArgument {
   return NOTHING;
 }
 
+const MERGE_METHODS = ["--merge", "--squash", "--rebase"];
+
+function merge(earlier: string[]): NextArgument {
+  if (earlier.at(-1) === "--policy") return { words: ["merge", "squash", "rebase"] };
+  const methodGiven = earlier.some((word) => MERGE_METHODS.includes(word));
+  const flags = unused(["--keep", ...(methodGiven ? [] : MERGE_METHODS), "--policy"], earlier);
+  return earlier.length === 0 ? { words: flags, values: "branches" } : { words: flags };
+}
+
 const SKILLS: Record<string, (earlier: string[]) => NextArgument> = {
   clean: (earlier) => (earlier.length === 0 ? { words: [], values: "names" } : NOTHING),
   worktree,
+  merge,
 };
 
 export function nextArgument(skill: string, earlier: string[]): NextArgument | undefined {

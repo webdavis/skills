@@ -11,6 +11,7 @@ const BRANCHES = [
   { value: "feature-b", description: "branch" },
   { value: "main", description: "branch" },
 ];
+const MERGE_FLAGS = ["--keep", "--merge", "--squash", "--rebase", "--policy"].map((value) => ({ value }));
 
 test("complete suggests the worktrees, then the other branches, after /clean", async () => {
   expect(await makeSUT().complete("/clean ")).toEqual({
@@ -67,6 +68,26 @@ test("complete suggests every branch after /worktree catchup's --with", async ()
 
 test("complete suggests nothing after /worktree list", async () => {
   expect(await suggestionsFor("/worktree list ")).toEqual([]);
+});
+
+test("complete suggests /merge's flags, then the branches", async () => {
+  expect(await suggestionsFor("/merge ")).toEqual([...MERGE_FLAGS, ...BRANCHES]);
+});
+
+test("complete suggests only /merge's flags after the branch", async () => {
+  expect(await suggestionsFor("/merge feature-a ")).toEqual(MERGE_FLAGS);
+});
+
+test("complete suggests no second merge method after /merge is given one", async () => {
+  expect(await suggestionsFor("/merge --squash --")).toEqual([{ value: "--keep" }, { value: "--policy" }]);
+});
+
+test("complete suggests the merge methods after /merge --policy", async () => {
+  expect(await suggestionsFor("/merge --policy ")).toEqual([
+    { value: "merge" },
+    { value: "squash" },
+    { value: "rebase" },
+  ]);
 });
 
 async function suggestionsFor(textBeforeCursor: string) {
