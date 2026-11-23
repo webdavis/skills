@@ -52,3 +52,22 @@ Copy this line into an `AGENTS.md` (or `CLAUDE.md`) so agents load the `git` ski
 ```
 Load the `git` skill before working in a git repository.
 ```
+
+## Completing the `git` plugin's arguments
+
+In omp and Claude Code the `git` plugin completes the arguments of its skills as you type, in the same popup that lists files after `@`. Move through it with Ctrl+N and Ctrl+P or the arrow keys, and pick with Tab. The list narrows to the names that hold what you typed.
+
+| Command | Completes |
+| --- | --- |
+| `/worktree` | `list`, `delete`, `catchup`; local and GitHub branches to make a worktree for; worktrees after `delete` and `catchup`; `--branch`, `--remote`, `--with` and a branch after it |
+| `/clean` | worktrees, local branches and GitHub branches |
+| `/merge` | open pull requests; `--keep`, `--merge`, `--squash`, `--rebase`, `--policy` and `merge`, `squash` or `rebase` after it |
+| `/pr` | `close`, then open pull requests |
+| `/commit` | `--policy`, then `tdd`, `guard` or `off`, then the repository's folders |
+| `/git` | `on`, `off` |
+
+GitHub branches are the ones git saw at the last fetch. Open pull requests come from `gh` in the background and are kept for 30 seconds, so the first list after a while may show none; without `gh` none are shown. `/amend` takes free text and has nothing to complete.
+
+omp names the skills `/skill:<name>`, and completes them there; its own `/worktree` command keeps omp's completion. Claude Code completes both `/<name>` and `/git:<name>`, from the first letter of an argument. Codex has no way for a plugin to complete arguments.
+
+To work on the completion code, run `bun install`, then `bun test`, `bun run check` and `bun run format:check` in `plugins/git`.
