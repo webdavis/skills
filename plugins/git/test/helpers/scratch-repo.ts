@@ -30,6 +30,11 @@ export class ScratchRepo {
     return this;
   }
 
+  worktreeIn(folder: string, branch: string): this {
+    this.git("worktree", "add", "--quiet", "-b", branch, `${this.path}/../${folder}`);
+    return this;
+  }
+
   removeWorktree(branch: string): this {
     this.git("worktree", "remove", `${this.path}-${branch}`);
     return this;

@@ -1,10 +1,13 @@
 import { homedir } from "node:os";
-import type { ExtensionAPI } from "@oh-my-pi/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext } from "@oh-my-pi/pi-coding-agent";
 import { folderOf, type ToolUse } from "./agent-folder.js";
 import { AgentWorktree } from "./agent-worktree.js";
 import { BunShell } from "./bun-shell.js";
+import { formatWorktree } from "./worktree-label.js";
 
 const STATUS_KEY = "git-agent-worktree";
+
+type StatusContext = { ui: Pick<ExtensionContext["ui"], "setStatus" | "theme"> };
 
 function text(value: unknown): string | undefined {
   return typeof value === "string" ? value : undefined;
@@ -25,12 +28,19 @@ export class OmpAgentStatus {
   register(pi: Pick<ExtensionAPI, "on">): void {
     pi.on("session_start", async (_event, ctx) => {
       this.worktree = new AgentWorktree(ctx.cwd);
-      ctx.ui.setStatus(STATUS_KEY, await this.worktree.start(new BunShell(ctx.cwd)));
+      await this.worktree.start(new BunShell(ctx.cwd));
+      this.show(ctx);
     });
     pi.on("tool_call", async (event, ctx) => {
       const folder = folderOf(toolUseOf(event.input), ctx.cwd, homedir());
-      const shown = await this.worktree?.acted(folder, new BunShell(ctx.cwd));
-      if (shown) ctx.ui.setStatus(STATUS_KEY, shown);
+      if (await this.worktree?.acted(folder, new BunShell(ctx.cwd))) this.show(ctx);
     });
+  }
+
+  private show(ctx: StatusContext): void {
+    const shown = this.worktree?.shown;
+    const { theme } = ctx.ui;
+    const style = { dim: (text: string) => theme.fg("dim", text), accent: (text: string) => theme.fg("accent", text) };
+    ctx.ui.setStatus(STATUS_KEY, shown && formatWorktree(shown, style));
   }
 }

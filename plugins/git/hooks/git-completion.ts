@@ -5,6 +5,7 @@ import { CachedPullRequests } from "../src/cached-pull-requests.js";
 import { GhPullRequests } from "../src/gh-pull-requests.js";
 import { GitRepository } from "../src/git-repository.js";
 import { PullRequestCache } from "../src/pull-request-cache.js";
+import { formatWorktree } from "../src/worktree-label.js";
 
 type Row = { text: string; label?: string; description?: string };
 type Rows = { suggestions: Row[] };
@@ -23,6 +24,7 @@ type On = {
 };
 
 const SKILL_COMMAND_PREFIXES = ["", "git:"];
+const PLAIN = { dim: (text: string) => text, accent: (text: string) => text };
 
 async function run($: Mods, argv: string[]): Promise<string> {
   try {
@@ -45,14 +47,17 @@ export function register(on: On) {
   on("session.start", async ($, e, next) => {
     session = { dir: e.cwd, home: (await $.env.get("HOME")) ?? "" };
     agentWorktree = new AgentWorktree(e.cwd);
-    $.ui.status(await agentWorktree.start({ run: (argv) => run($, argv) }));
+    await agentWorktree.start({ run: (argv) => run($, argv) });
+    $.ui.status(agentWorktree.shown && formatWorktree(agentWorktree.shown, PLAIN));
     return next(e);
   });
 
   on("tool.call", async ($, e, next) => {
     const use = { command: text(e.command), path: text(e.file_path) ?? text(e.notebook_path) };
-    const shown = await agentWorktree?.acted(folderOf(use, session.dir, session.home), { run: (argv) => run($, argv) });
-    if (shown) $.ui.status(shown);
+    const folder = folderOf(use, session.dir, session.home);
+    if (agentWorktree && (await agentWorktree.acted(folder, { run: (argv) => run($, argv) }))) {
+      $.ui.status(agentWorktree.shown && formatWorktree(agentWorktree.shown, PLAIN));
+    }
     return next(e);
   });
 

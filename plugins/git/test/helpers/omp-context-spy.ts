@@ -14,6 +14,7 @@ export class OmpContextSpy {
     setStatus: (key: string, text: string | undefined): void => {
       this.statuses.set(key, text);
     },
+    theme: { fg: (color: string, text: string): string => `${color}(${text})` },
   };
 
   get statusLine(): (string | undefined)[] {

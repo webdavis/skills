@@ -3,10 +3,10 @@ import { register } from "../../hooks/git-completion.js";
 import { ClaudeCodeSpy } from "../helpers/claude-code-spy.js";
 import { ScratchRepo } from "../helpers/scratch-repo.js";
 
-test("a Claude Code session starts with the session folder's branch under the prompt", async () => {
+test("a Claude Code session starts with no worktree under the prompt while the agent works in the session's own", async () => {
   const { claudeCode } = await makeSUT();
 
-  expect(claudeCode.statusLines).toEqual(["agent: this folder · branch main"]);
+  expect(claudeCode.statusLines).toEqual([undefined]);
 });
 
 test("the line under Claude Code's prompt names the worktree the agent edits a file in", async () => {
@@ -18,7 +18,7 @@ test("the line under Claude Code's prompt names the worktree the agent edits a f
     new_string: "b",
   });
 
-  expect(claudeCode.statusLines.at(-1)).toBe(`agent worktree: ${repo.name}-feature-b · branch feature-b`);
+  expect(claudeCode.statusLines.at(-1)).toBe(`worktree ${repo.name}-feature-b (feature-b)`);
 });
 
 test("the line under Claude Code's prompt follows a shell command that moves into a worktree", async () => {
@@ -26,7 +26,7 @@ test("the line under Claude Code's prompt follows a shell command that moves int
 
   await claudeCode.agentCalls("Bash", { command: `cd ${repo.path}-feature-b && git status` });
 
-  expect(claudeCode.statusLines.at(-1)).toBe(`agent worktree: ${repo.name}-feature-b · branch feature-b`);
+  expect(claudeCode.statusLines.at(-1)).toBe(`worktree ${repo.name}-feature-b (feature-b)`);
 });
 
 test("the agent's tool call still runs in Claude Code", async () => {

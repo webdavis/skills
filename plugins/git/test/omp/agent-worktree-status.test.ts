@@ -4,10 +4,10 @@ import { OmpContextSpy } from "../helpers/omp-context-spy.js";
 import { OmpSpy } from "../helpers/omp-spy.js";
 import { ScratchRepo } from "../helpers/scratch-repo.js";
 
-test("an omp session starts with the session folder's branch on the status line", async () => {
+test("an omp session starts with no worktree on the status line while the agent works in the session's own", async () => {
   const { context } = await makeSUT();
 
-  expect(context.statusLine).toEqual(["agent: this folder · branch main"]);
+  expect(context.statusLine).toEqual([undefined]);
 });
 
 test("the status line names the worktree the agent edits a file in", async () => {
@@ -15,16 +15,16 @@ test("the status line names the worktree the agent edits a file in", async () =>
 
   await omp.agentCalls("edit", { input: `[${repo.path}-feature-b/notes.md#1A2B]\nPUT 1:\n+x` }, context);
 
-  expect(context.statusLine).toEqual([`agent worktree: ${repo.name}-feature-b · branch feature-b`]);
+  expect(context.statusLine).toEqual([`dim(worktree) accent(${repo.name}-feature-b) dim((feature-b))`]);
 });
 
-test("the status line follows the agent's shell commands and reads between worktrees", async () => {
+test("the status line drops the worktree once the agent reads in the session's own again", async () => {
   const { omp, context, repo } = await makeSUT();
 
   await omp.agentCalls("bash", { command: "git status", cwd: `${repo.path}-feature-b` }, context);
   await omp.agentCalls("read", { path: `${repo.path}/README.md` }, context);
 
-  expect(context.statusLine).toEqual(["agent: this folder · branch main"]);
+  expect(context.statusLine).toEqual([undefined]);
 });
 
 test("the worktree the agent last worked in comes first in omp's worktree picker", async () => {

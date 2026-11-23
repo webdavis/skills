@@ -1,4 +1,5 @@
 import type { Shell } from "./shell.js";
+import type { WorktreeLabel } from "./worktree-label.js";
 
 interface Location {
   root: string;
@@ -14,9 +15,8 @@ function folderName(path: string): string {
 }
 
 async function locate(dir: string, shell: Shell): Promise<Location | undefined> {
-  const [root, branch] = (
-    await shell.run(["git", "-C", dir, "rev-parse", "--show-toplevel", "--abbrev-ref", "HEAD"])
-  ).split("\n");
+  const toplevel = await shell.run(["git", "-C", dir, "rev-parse", "--show-toplevel", "--abbrev-ref", "HEAD"]);
+  const [root, branch] = toplevel.split("\n");
   if (!root || !branch) return undefined;
   const mainWorktree = MAIN_WORKTREE.exec(await shell.run(["git", "-C", dir, "worktree", "list", "--porcelain"]));
   const repository = mainWorktree?.[1] ?? root;
@@ -27,40 +27,39 @@ async function locate(dir: string, shell: Shell): Promise<Location | undefined> 
 export class AgentWorktree {
   private readonly locations = new Map<string, Location | undefined>();
   private session?: Location;
-  private shown?: Location;
+  private current?: Location;
 
   constructor(private readonly sessionDir: string) {}
 
+  get shown(): WorktreeLabel | undefined {
+    const location = this.current;
+    if (!location || location.root === this.session?.root) return undefined;
+    const label: WorktreeLabel = { name: folderName(location.root) };
+    if (location.repository !== this.session?.repository) label.repository = folderName(location.repository);
+    if (location.branch) label.branch = location.branch;
+    if (location.commit) label.commit = location.commit;
+    return label;
+  }
+
   get lastBranch(): string | undefined {
-    return this.shown === this.session ? undefined : this.shown?.branch;
+    return this.shown && this.current?.branch;
   }
 
-  async start(shell: Shell): Promise<string | undefined> {
+  async start(shell: Shell): Promise<void> {
     this.session = await this.locate(this.sessionDir, shell);
-    this.shown = this.session;
-    return this.shown && this.describe(this.shown);
+    this.current = this.session;
   }
 
-  async acted(dir: string | undefined, shell: Shell): Promise<string | undefined> {
+  async acted(dir: string | undefined, shell: Shell): Promise<boolean> {
     const location = dir === undefined ? undefined : await this.locate(dir, shell);
-    if (location && location.root !== this.shown?.root) return this.show(location);
-    if (this.shown && this.shown !== this.session && !(await locate(this.shown.root, shell))) {
-      return this.session && this.show(this.session);
-    }
-    return undefined;
+    if (location && location.root !== this.current?.root) return this.move(location);
+    if (this.shown && !(await locate(this.current!.root, shell))) return this.move(this.session);
+    return false;
   }
 
-  private show(location: Location): string {
-    this.shown = location.root === this.session?.root ? this.session : location;
-    return this.describe(location);
-  }
-
-  private describe({ root, repository, branch, commit }: Location): string {
-    const branchText = branch ? `branch ${branch}` : `branch detached at ${commit}`;
-    if (root === this.session?.root) return `agent: this folder · ${branchText}`;
-    const sameRepository = repository === this.session?.repository;
-    const name = sameRepository ? folderName(root) : `${folderName(repository)}/${folderName(root)}`;
-    return `agent worktree: ${name} · ${branchText}`;
+  private move(location: Location | undefined): boolean {
+    this.current = location;
+    return true;
   }
 
   private async locate(dir: string, shell: Shell): Promise<Location | undefined> {
