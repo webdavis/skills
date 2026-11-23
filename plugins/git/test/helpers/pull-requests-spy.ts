@@ -5,7 +5,15 @@ export class PullRequestsSpy implements PullRequests {
   private readonly answers: PromiseWithResolvers<PullRequest[]>[] = [];
 
   open(): Promise<PullRequest[]> {
-    this.messages.push("open");
+    return this.ask("open");
+  }
+
+  closedUnmerged(): Promise<PullRequest[]> {
+    return this.ask("closedUnmerged");
+  }
+
+  private ask(message: string): Promise<PullRequest[]> {
+    this.messages.push(message);
     const answer = Promise.withResolvers<PullRequest[]>();
     this.answers.push(answer);
     return answer.promise;

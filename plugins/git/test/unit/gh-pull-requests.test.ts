@@ -30,6 +30,33 @@ test("open answers nothing when gh is missing or fails", async () => {
   expect(await sut.open()).toEqual([]);
 });
 
+const GH_CLOSED_PULL_REQUESTS = JSON.stringify([
+  { number: 7, title: "Try a new theme", headRefName: "theme", mergedAt: null },
+  { number: 5, title: "Add the footer", headRefName: "footer", mergedAt: "2026-11-01T10:00:00Z" },
+]);
+
+test("closedUnmerged asks gh for the repository's closed pull requests with when each was merged", async () => {
+  const { sut, shell } = makeSUT(GH_CLOSED_PULL_REQUESTS);
+
+  await sut.closedUnmerged();
+
+  expect(shell.messages).toEqual([
+    ["gh", "pr", "list", "--state", "closed", "--json", "number,title,headRefName,mergedAt"],
+  ]);
+});
+
+test("closedUnmerged answers only the closed pull requests that were never merged", async () => {
+  const { sut } = makeSUT(GH_CLOSED_PULL_REQUESTS);
+
+  expect(await sut.closedUnmerged()).toEqual([{ number: 7, title: "Try a new theme", branch: "theme" }]);
+});
+
+test("closedUnmerged answers nothing when gh is missing or fails", async () => {
+  const { sut } = makeSUT("");
+
+  expect(await sut.closedUnmerged()).toEqual([]);
+});
+
 function makeSUT(output: string) {
   const shell = new ShellStub(output);
   const sut = new GhPullRequests(shell);

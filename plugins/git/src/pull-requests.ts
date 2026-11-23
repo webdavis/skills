@@ -6,4 +6,5 @@ export interface PullRequest {
 
 export interface PullRequests {
   open(): Promise<PullRequest[]>;
+  closedUnmerged(): Promise<PullRequest[]>;
 }

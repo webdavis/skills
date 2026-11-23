@@ -7,4 +7,8 @@ export class PullRequestsStub implements PullRequests {
       { number: 9, title: "Fix a typo", branch: "fix-typo" },
     ];
   }
+
+  async closedUnmerged(): Promise<PullRequest[]> {
+    return [{ number: 7, title: "Try a new theme", branch: "theme" }];
+  }
 }
