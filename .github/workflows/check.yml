@@ -1,0 +1,34 @@
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install skill-validator
+        run: |
+          archive=skill-validator_1.8.0_linux_amd64.tar.gz
+          curl -fsSLO "https://github.com/agent-ecosystem/skill-validator/releases/download/v1.8.0/$archive"
+          echo "a9b4cb3436682ff8d55dd0d164376c8479d35cb58c0adc3e93170fbde8baa04f  $archive" | sha256sum -c -
+          tar -xzf "$archive" skill-validator
+          sudo install skill-validator /usr/local/bin/
+      - run: npm install -g @anthropic-ai/claude-code@2.1.330
+      - run: skill-validator check --allow-extra-frontmatter --allow-dirs=agents,evals plugins/
+      - name: Validate plugins and marketplace
+        run: |
+          for plugin in plugins/*/; do
+            claude plugin validate "$plugin"
+          done
+          claude plugin validate .
