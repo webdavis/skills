@@ -1,16 +1,16 @@
 import { expect, test } from "bun:test";
-import { GitNames } from "../../src/git-names.js";
-import { ShellGit } from "../../src/shell-git.js";
+import { BunShell } from "../../src/bun-shell.js";
+import { GitRepository } from "../../src/git-repository.js";
 import { notARepository, ScratchRepo } from "../helpers/scratch-repo.js";
 
-test("branches answers every local branch", async () => {
+test("localBranches answers every local branch", async () => {
   const repo = new ScratchRepo().branch("feature-a").branch("fix/typo");
 
-  expect(await makeSUT(repo.path).branches()).toEqual(["feature-a", "fix/typo", "main"]);
+  expect(await makeSUT(repo.path).localBranches()).toEqual(["feature-a", "fix/typo", "main"]);
 });
 
-test("branches answers nothing outside a git repository", async () => {
-  expect(await makeSUT(notARepository()).branches()).toEqual([]);
+test("localBranches answers nothing outside a git repository", async () => {
+  expect(await makeSUT(notARepository()).localBranches()).toEqual([]);
 });
 
 test("worktrees answers the branch of every worktree", async () => {
@@ -30,5 +30,5 @@ test("worktrees answers nothing outside a git repository", async () => {
 });
 
 function makeSUT(cwd: string) {
-  return new GitNames(new ShellGit(cwd));
+  return new GitRepository(new BunShell(cwd));
 }

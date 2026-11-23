@@ -1,4 +1,4 @@
-import type { Names } from "./names.js";
+import type { Repository } from "./repository.js";
 import { nextArgument, type Values } from "./skill-arguments.js";
 
 export interface Suggestion {
@@ -18,7 +18,7 @@ function described(description: string) {
 }
 
 export class ArgumentCompleter {
-  constructor(private readonly names: Names) {}
+  constructor(private readonly repository: Repository) {}
 
   async complete(textBeforeCursor: string): Promise<Completion | undefined> {
     const prompt = SKILL_PROMPT.exec(textBeforeCursor);
@@ -33,10 +33,10 @@ export class ArgumentCompleter {
   }
 
   private async values(values?: Values): Promise<Suggestion[]> {
-    if (values === "branches") return (await this.names.branches()).map(described("branch"));
+    if (values === "branches") return (await this.repository.localBranches()).map(described("branch"));
     if (values !== "names") return [];
-    const worktrees = await this.names.worktrees();
-    const otherBranches = (await this.names.branches()).filter((branch) => !worktrees.includes(branch));
+    const worktrees = await this.repository.worktrees();
+    const otherBranches = (await this.repository.localBranches()).filter((branch) => !worktrees.includes(branch));
     return [...worktrees.map(described("worktree")), ...otherBranches.map(described("branch"))];
   }
 }

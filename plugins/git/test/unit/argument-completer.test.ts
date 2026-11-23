@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { ArgumentCompleter } from "../../src/argument-completer.js";
-import { NamesStub } from "../helpers/names-stub.js";
+import { RepositoryStub } from "../helpers/repository-stub.js";
 
 const WORKTREE_MAIN = { value: "main", description: "worktree" };
 const WORKTREE_FEATURE_B = { value: "feature-b", description: "worktree" };
@@ -102,5 +102,5 @@ async function suggestionsFor(textBeforeCursor: string) {
 }
 
 function makeSUT() {
-  return new ArgumentCompleter(new NamesStub());
+  return new ArgumentCompleter(new RepositoryStub());
 }
