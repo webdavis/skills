@@ -103,12 +103,24 @@ test("complete suggests the merge methods after /merge --policy", async () => {
   ]);
 });
 
-test("complete suggests /pr's keywords in the order the skill gives them", async () => {
+test("complete suggests /pr's --draft and keywords in the order the skill gives them", async () => {
   expect(await suggestionsFor("/pr ")).toEqual([
+    { value: "--draft" },
     { value: "status" },
     { value: "checkout" },
+    { value: "ready" },
     { value: "close" },
     { value: "reopen" },
+  ]);
+});
+
+test("complete suggests nothing more after /pr --draft", async () => {
+  expect(await suggestionsFor("/pr --draft ")).toEqual([]);
+});
+
+test("complete suggests the open draft pull requests after /pr ready", async () => {
+  expect(await suggestionsFor("/pr ready ")).toEqual([
+    { value: "15", label: "#15 Sketch the settings page", description: "settings" },
   ]);
 });
 
@@ -154,8 +166,22 @@ test("complete finds a pull request by its number, its title or its branch", asy
   expect(await suggestionsFor("/pr close typo")).toEqual([PULL_REQUESTS[1]]);
 });
 
+test("complete suggests the branch's own commits after /amend, newest first", async () => {
+  expect(await suggestionsFor("/amend ")).toEqual([
+    { value: "1a2b3c4", label: "Fix the label", description: "1a2b3c4" },
+    { value: "5d6e7f8", label: "Add the form", description: "5d6e7f8" },
+  ]);
+  expect(await suggestionsFor("/amend form")).toEqual([
+    { value: "5d6e7f8", label: "Add the form", description: "5d6e7f8" },
+  ]);
+});
+
+test("complete suggests nothing for the free text after /amend's commit", async () => {
+  expect(await suggestionsFor("/amend 1a2b3c4 ")).toEqual([]);
+});
+
 test("complete leaves alone a prompt that does not start with one of the skills", async () => {
-  expect(await suggestionsFor("/amend ")).toBeUndefined();
+  expect(await suggestionsFor("/conventional-commits ")).toBeUndefined();
   expect(await suggestionsFor("tidy up /clean ")).toBeUndefined();
 });
 

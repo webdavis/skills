@@ -80,6 +80,13 @@ export class ArgumentCompleter {
         return (await this.pullRequests.open()).map(pullRequestCandidate);
       case "closedPullRequests":
         return (await this.pullRequests.closedUnmerged()).map(pullRequestCandidate);
+      case "draftPullRequests":
+        return (await this.pullRequests.openDrafts()).map(pullRequestCandidate);
+      case "branchCommits":
+        return (await this.repository.branchCommits()).map(({ sha, subject }) => ({
+          suggestion: { value: sha, label: subject, description: sha },
+          searchedText: [sha, subject],
+        }));
     }
   }
 

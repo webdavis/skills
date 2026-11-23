@@ -1,5 +1,12 @@
 export type Values =
-  "worktrees" | "localBranches" | "remoteBranches" | "openPullRequests" | "closedPullRequests" | "folders";
+  | "worktrees"
+  | "localBranches"
+  | "remoteBranches"
+  | "openPullRequests"
+  | "closedPullRequests"
+  | "draftPullRequests"
+  | "branchCommits"
+  | "folders";
 
 export interface NextArgument {
   words: string[];
@@ -12,6 +19,7 @@ const MERGE_METHODS = ["--merge", "--squash", "--rebase"];
 const PR_ACTIONS: Record<string, Values> = {
   status: "openPullRequests",
   checkout: "openPullRequests",
+  ready: "draftPullRequests",
   close: "openPullRequests",
   reopen: "closedPullRequests",
 };
@@ -58,11 +66,12 @@ const SKILLS: Record<string, (earlier: string[]) => NextArgument> = {
   clean: (earlier) => (earlier.length === 0 ? { words: [], values: ["worktrees", ...BRANCHES] } : NOTHING),
   merge,
   pr: (earlier) => {
-    if (earlier.length === 0) return { words: Object.keys(PR_ACTIONS), values: [] };
+    if (earlier.length === 0) return { words: ["--draft", ...Object.keys(PR_ACTIONS)], values: [] };
     const pullRequests = earlier.length === 1 ? PR_ACTIONS[earlier[0]!] : undefined;
     return pullRequests ? { words: [], values: [pullRequests] } : NOTHING;
   },
   commit,
+  amend: (earlier) => (earlier.length === 0 ? { words: [], values: ["branchCommits"] } : NOTHING),
   git: (earlier) => (earlier.length === 0 ? { words: ["on", "off"], values: [] } : NOTHING),
 };
 
