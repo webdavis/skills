@@ -1,6 +1,6 @@
 {
   "name": "webdavis-git",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Git and GitHub flows: one conventional commit at a time, pull requests through gh-axi, worktrunk-aware branch cleanup.",
   "keywords": [
     "omp",
