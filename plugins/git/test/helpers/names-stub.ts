@@ -1,4 +1,4 @@
-import type { Names } from "../../src/names.ts";
+import type { Names } from "../../src/names.js";
 
 export class NamesStub implements Names {
   async worktrees(): Promise<string[]> {

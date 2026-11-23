@@ -1,5 +1,5 @@
 import { $ } from "bun";
-import type { Git } from "./git.ts";
+import type { Git } from "./git.js";
 
 export class ShellGit implements Git {
   constructor(private readonly cwd: string) {}

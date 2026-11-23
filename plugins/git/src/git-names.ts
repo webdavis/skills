@@ -1,5 +1,5 @@
-import type { Git } from "./git.ts";
-import type { Names } from "./names.ts";
+import type { Git } from "./git.js";
+import type { Names } from "./names.js";
 
 const BRANCH = "branch refs/heads/";
 

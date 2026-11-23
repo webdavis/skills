@@ -1,9 +1,9 @@
 import { expect, test } from "bun:test";
 import type { AutocompleteItem } from "@oh-my-pi/pi-tui";
-import gitCompletionExtension from "../../src/git-completion.ts";
-import { OmpContextSpy } from "../helpers/omp-context-spy.ts";
-import { OmpSpy } from "../helpers/omp-spy.ts";
-import { ScratchRepo } from "../helpers/scratch-repo.ts";
+import gitCompletionExtension from "../../src/git-completion.js";
+import { OmpContextSpy } from "../helpers/omp-context-spy.js";
+import { OmpSpy } from "../helpers/omp-spy.js";
+import { ScratchRepo } from "../helpers/scratch-repo.js";
 
 test("a space after /worktree in omp shows its keywords, then the repository's worktrees and branches", async () => {
   const { context } = await makeSUT();

@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
-import { GitNames } from "../../src/git-names.ts";
-import { ShellGit } from "../../src/shell-git.ts";
-import { notARepository, ScratchRepo } from "../helpers/scratch-repo.ts";
+import { GitNames } from "../../src/git-names.js";
+import { ShellGit } from "../../src/shell-git.js";
+import { notARepository, ScratchRepo } from "../helpers/scratch-repo.js";
 
 test("branches answers every local branch", async () => {
   const repo = new ScratchRepo().branch("feature-a").branch("fix/typo");

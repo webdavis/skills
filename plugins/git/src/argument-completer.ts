@@ -1,5 +1,5 @@
-import type { Names } from "./names.ts";
-import { nextArgument, type Values } from "./skill-arguments.ts";
+import type { Names } from "./names.js";
+import { nextArgument, type Values } from "./skill-arguments.js";
 
 export interface Suggestion {
   value: string;
@@ -23,7 +23,7 @@ export class ArgumentCompleter {
   async complete(textBeforeCursor: string): Promise<Completion | undefined> {
     const prompt = SKILL_PROMPT.exec(textBeforeCursor);
     if (!prompt) return undefined;
-    const [, skill, argumentText] = prompt;
+    const [, skill = "", argumentText = ""] = prompt;
     const earlier = argumentText.split(/\s+/);
     const word = earlier.pop() ?? "";
     const next = nextArgument(skill, earlier);

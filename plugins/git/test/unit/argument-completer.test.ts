@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { ArgumentCompleter } from "../../src/argument-completer.ts";
-import { NamesStub } from "../helpers/names-stub.ts";
+import { ArgumentCompleter } from "../../src/argument-completer.js";
+import { NamesStub } from "../helpers/names-stub.js";
 
 const WORKTREE_MAIN = { value: "main", description: "worktree" };
 const WORKTREE_FEATURE_B = { value: "feature-b", description: "worktree" };

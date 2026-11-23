@@ -1,5 +1,5 @@
 import type { AutocompleteItem, AutocompleteProvider } from "@oh-my-pi/pi-tui";
-import type { ArgumentCompleter } from "./argument-completer.ts";
+import type { ArgumentCompleter } from "./argument-completer.js";
 
 type Suggestions = { items: AutocompleteItem[]; prefix: string };
 
