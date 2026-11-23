@@ -2,12 +2,13 @@
 name: depgraph
 description: >-
   Draw a dependency diagram of the repository you are in, as a picture: modules and the links
-  between them, the files inside chosen modules, and the functions and types inside those files.
-  Arguments: `[--modules [name ...]] [--symbols] [--output <file.svg|file.png>]`.
-  It shows the picture in the session and writes a file only when `--output` names one.
+  between them, the files inside chosen modules, the functions and types inside those files, or
+  only the code changed on the current branch. Arguments: `[--modules [name ...]]
+  [--changed[=<ref>]] [--symbols] [--output <file.svg|file.png>]`. It shows the picture in the
+  session and writes a file only when `--output` names one.
 disable-model-invocation: true
-argument-hint: "[--modules [name ...]] [--symbols] [--output <file.svg|file.png>]"
-compatibility: Requires the d2 program on PATH.
+argument-hint: "[--modules [name ...]] [--changed[=<ref>]] [--symbols] [--output <file.svg|file.png>]"
+compatibility: Requires the d2 program on PATH, and git for --changed.
 ---
 
 # depgraph
@@ -27,12 +28,13 @@ that a plain word is never taken for the wrong thing:
 | Part | Rule |
 | --- | --- |
 | `--modules` | Takes the names that follow it, up to the next flag. No names means every module. |
-| `--symbols` | Takes nothing. Valid only with `--modules`. |
+| `--changed` | Alone, compares against the default branch. A starting point is attached with `=`, as in `--changed=HEAD~3`. |
+| `--symbols` | Takes nothing. Valid only with `--modules` or `--changed`. |
 | `--output` | Takes one path ending in `.svg` or `.png`. |
 
 Stop and say what is wrong, drawing nothing, when:
 
-- `--symbols` is given without `--modules`. Tell the user to add `--modules`.
+- `--symbols` is given with neither `--modules` nor `--changed`. Tell the user to add `--modules`.
 - `--output` names a file that is not `.svg` or `.png`.
 - a name after `--modules` matches no module. List the modules that exist.
 
@@ -43,7 +45,15 @@ Stop and say what is wrong, drawing nothing, when:
 | no scope | One box per module | Module to module |
 | `--modules` | Every module as a group, with one box per source file inside | File to file |
 | `--modules a b` | Only the named modules, opened the same way. A file outside them that a shown file depends on, or that depends on a shown file, is left out. | File to file |
-| `--modules` with `--symbols` | Each file becomes a group holding one box per top-level declaration in it | See "Symbols" |
+| `--changed` | The changed files, plus their direct neighbours, grouped by module | File to file |
+| any of the last three with `--symbols` | Each file becomes a group holding one box per top-level declaration in it | See "Symbols" |
+
+`--modules` narrows `--changed` to the named modules.
+
+A direct neighbour is a file one step away: something the chosen code depends on, or something that
+depends on it. Neighbours give the chosen code its context. Go one step only, because a second step
+pulls in most of the codebase and buries what was asked for. For the same reason, draw no link
+between two neighbours: every link drawn has chosen code on at least one end.
 
 ## Find the modules and links
 
@@ -59,7 +69,7 @@ Read the code for the links; do not guess them from names.
 1. List the modules.
 2. List each module's source files. Leave out tests, fixtures, generated code, vendored code and
    developer tooling such as build or lint scripts, because they hide the shape of the production
-   code.
+   code. Leave them out as neighbours too.
 3. Collect what each file depends on: import, `use`, `mod`, `include` and `require` lines, lines
    that embed another file such as `include_str!`, and the dependencies the build files declare
    between modules.
@@ -80,6 +90,28 @@ Read the code for the links; do not guess them from names.
 
 Draw each link once, pointing from the code that depends to the code it depends on. Give inferred
 links the `inferred` class as well, so they look different from links read from the code.
+
+## Changed code
+
+For `--changed`, git is the source of truth, because it is exact and does not rely on memory of
+the session.
+
+1. Run the script beside this file, passing the ref from `--changed=<ref>` when one was given:
+   `<this skill's folder>/scripts/changed-files.sh [<ref>]`. It picks the remote's default branch
+   when no ref is given, compares from the point where the current branch left it, and includes
+   uncommitted edits and new files. Use its output as it is; do not work out the starting point
+   yourself, because the local default branch can be ahead of the remote and hide committed work.
+2. Its first two lines are `start <ref>` and `base <commit>`. Each line after that is a git status
+   letter and a path: `A` added, `M` modified, `D` deleted, `R<score>` renamed with old and new path.
+3. Keep source files only. Ignore documents, configuration and tests.
+4. If the script fails, or nothing is left, say so and draw nothing.
+
+Mark each changed box by starting its label with `+ ` for added, `~ ` for modified and `- ` for
+removed. Give removed boxes the `removed` class as well. A renamed file is one modified box under
+its new name. For a removed file, read its old content with `git show <merge-base>:<path>` to find
+what it depended on, and search the current code for anything that still refers to it.
+
+Give neighbour boxes the `neighbour` class, which dims them.
 
 ## Symbols
 
@@ -105,6 +137,9 @@ file-level import, start the link from the file group. Use the `implements` clas
 implements an interface or extends a base. Draw no links between declarations of the same file:
 the picture is about how files depend on each other, and links inside a file crowd it.
 
+With `--changed`, put the `+ `, `~ ` or `- ` prefix on the declarations that changed, and on the
+file group.
+
 ## Write the diagram
 
 Create a working folder outside the repository with `mktemp -d`, and write `diagram.d2` in it.
@@ -126,6 +161,8 @@ Then write groups, boxes and links using only these classes:
 | `module` | A module drawn as a single box |
 | `file` | A file drawn as a single box |
 | `interface`, `type`, `enum`, `function` | A declaration box |
+| `neighbour` | Added to a box that is only context |
+| `removed` | Added to a box for removed code |
 | `from-module`, `from-file`, `from-interface`, `from-type`, `from-enum`, `from-function` | A link, named for the kind of box it starts from. A link that starts from a group uses that group's kind: `from-file` or `from-module`. |
 | `implements` | Added to a link that means "implements" or "extends" |
 | `inferred` | Added to a link found by inference rather than read from the code |
@@ -136,7 +173,7 @@ Rules that keep the file valid:
   and put the real name in the label. Real names collide with words D2 reserves, such as `near`,
   `label`, `style` and `class`, and names with dots or dashes break paths.
 - Put every label in double quotes. Write a line break inside a label as `\n`.
-- Apply two classes with a list: `class: [from-type; implements]`.
+- Apply two classes with a list: `class: [type; neighbour]`.
 - Refer to a box inside a group by its path: `m1.f3`, or `m1.f3.s12`.
 
 Example, for two modules with one file opened to its declarations:
@@ -155,8 +192,8 @@ m1: "pwe" {
 }
 m2: "agent" {
   class: module-group
-  f3: "list.rs" {class: file}
-  f4: "agent.rs" {class: file}
+  f3: "~ list.rs" {class: file}
+  f4: "agent.rs" {class: [file; neighbour]}
 }
 m1.f1 -> m1.f2.s2: {class: from-file}
 m1.f1 -> m2.f3: {class: from-file}
@@ -182,8 +219,8 @@ and style settings:
   folder if it is missing. An existing file at that path is replaced, since the user named it.
 
 If the diagram would have more than 50 boxes, groups not counted, do not draw it. A picture that
-size cannot be read. Report the count and suggest a narrower request: named modules, or no
-`--symbols`.
+size cannot be read. Report the count and suggest a narrower request: named modules, no
+`--symbols`, or a smaller change range.
 
 ## Reply
 
@@ -191,6 +228,8 @@ Keep the reply short. After the picture and its path, state:
 
 - what the boxes are and what scope was drawn, in one line;
 - a key covering only what appears in this picture, taken from: purple interface, blue type or
-  file, green enum, orange function, grey outline module, dashed grey frame module group,
-  long-dashed arrow with a hollow head for "implements", short-dashed arrow for inferred;
-- every link that was inferred rather than read from an import or build file, or "none".
+  file, green enum, orange function, grey outline module, dashed grey frame module group, dimmed
+  for context only, `+` added, `~` modified, `-` removed, long-dashed arrow with a hollow head for
+  "implements", short-dashed arrow for inferred;
+- every link that was inferred rather than read from an import or build file, or "none";
+- for `--changed`, the starting point used.
