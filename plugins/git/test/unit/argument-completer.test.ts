@@ -90,17 +90,24 @@ test("complete suggests the merge methods after /merge --policy", async () => {
   ]);
 });
 
-test("complete suggests the same arguments after the plugin's or omp's skill prefix", async () => {
-  const plain = await suggestionsFor("/worktree delete ");
+test("complete suggests the same arguments under every command form the host names the skill with", async () => {
+  const sut = makeSUT(["", "git:"]);
+  const plain = await sut.complete("/worktree delete ");
 
-  expect(await suggestionsFor("/git:worktree delete ")).toEqual(plain);
-  expect(await suggestionsFor("/skill:worktree delete ")).toEqual(plain);
+  expect(await sut.complete("/git:worktree delete ")).toEqual(plain!);
+});
+
+test("complete leaves alone a command form the host keeps for something else", async () => {
+  const sut = makeSUT(["skill:"]);
+
+  expect(await sut.complete("/worktree delete ")).toBeUndefined();
+  expect(await sut.complete("/skill:worktree delete ")).toBeDefined();
 });
 
 async function suggestionsFor(textBeforeCursor: string) {
   return (await makeSUT().complete(textBeforeCursor))?.suggestions;
 }
 
-function makeSUT() {
-  return new ArgumentCompleter(new RepositoryStub());
+function makeSUT(commandPrefixes = [""]) {
+  return new ArgumentCompleter(new RepositoryStub(), commandPrefixes);
 }

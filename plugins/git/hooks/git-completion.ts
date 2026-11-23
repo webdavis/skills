@@ -15,11 +15,14 @@ async function run($: Mods, argv: string[]): Promise<string> {
   }
 }
 
+const SKILL_COMMAND_PREFIXES = ["", "git:"];
+
 // Claude Code loads a mod through the named register export, so this adapter cannot use a default export.
 export function register(on: (event: "prompt.autocomplete", hook: Hook) => unknown) {
   on("prompt.autocomplete", async ($, e, next) => {
     const repository = new GitRepository({ run: (argv) => run($, argv) });
-    const completion = await new ArgumentCompleter(repository).complete(e.text.slice(0, e.cursor));
+    const completer = new ArgumentCompleter(repository, SKILL_COMMAND_PREFIXES);
+    const completion = await completer.complete(e.text.slice(0, e.cursor));
     const theirs = await next(e);
     const ours = completion?.suggestions.map(({ value, description }) => ({ text: value, description })) ?? [];
     return { suggestions: [...(theirs?.suggestions ?? []), ...ours] };

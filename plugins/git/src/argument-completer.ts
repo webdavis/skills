@@ -11,17 +11,23 @@ export interface Completion {
   suggestions: Suggestion[];
 }
 
-const SKILL_PROMPT = /^\s*\/(?:git:|skill:)?(\S+)\s+(.*)$/s;
-
 function described(description: string) {
   return (value: string): Suggestion => ({ value, description });
 }
 
 export class ArgumentCompleter {
-  constructor(private readonly repository: Repository) {}
+  private readonly skillPrompt: RegExp;
+
+  constructor(
+    private readonly repository: Repository,
+    commandPrefixes: string[],
+  ) {
+    const longestFirst = [...commandPrefixes].sort((a, b) => b.length - a.length);
+    this.skillPrompt = new RegExp(`^\\s*/(?:${longestFirst.join("|")})(\\S+)\\s+(.*)$`, "s");
+  }
 
   async complete(textBeforeCursor: string): Promise<Completion | undefined> {
-    const prompt = SKILL_PROMPT.exec(textBeforeCursor);
+    const prompt = this.skillPrompt.exec(textBeforeCursor);
     if (!prompt) return undefined;
     const [, skill = "", argumentText = ""] = prompt;
     const earlier = argumentText.split(/\s+/);

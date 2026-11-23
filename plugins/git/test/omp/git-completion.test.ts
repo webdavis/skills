@@ -5,10 +5,10 @@ import { OmpContextSpy } from "../helpers/omp-context-spy.js";
 import { OmpSpy } from "../helpers/omp-spy.js";
 import { ScratchRepo } from "../helpers/scratch-repo.js";
 
-test("a space after /worktree in omp shows its keywords, then the repository's worktrees and branches", async () => {
+test("a space after /skill:worktree in omp shows its keywords, then the repository's worktrees and branches", async () => {
   const { context } = await makeSUT();
 
-  const suggestions = await context.autocomplete.getSuggestions(["/worktree "], 0, 10);
+  const suggestions = await context.autocomplete.getSuggestions(["/skill:worktree "], 0, 16);
 
   expect(rows(suggestions?.items)).toEqual([
     "list",
@@ -20,36 +20,40 @@ test("a space after /worktree in omp shows its keywords, then the repository's w
   ]);
 });
 
-test("typing after /clean in omp narrows the names to those that start with what was typed", async () => {
+test("typing after /skill:clean in omp narrows the names to those that start with what was typed", async () => {
   const { context } = await makeSUT();
 
-  const suggestions = await context.autocomplete.getSuggestions(["/clean feature-a"], 0, 16);
+  const suggestions = await context.autocomplete.getSuggestions(["/skill:clean feature-a"], 0, 22);
 
   expect(rows(suggestions?.items)).toEqual(["feature-a · branch"]);
 });
 
 test("picking a name in omp writes it over the word being typed", async () => {
   const { context } = await makeSUT();
-  const lines = ["/worktree delete fe"];
-  const suggestions = await context.autocomplete.getSuggestions(lines, 0, 19);
+  const lines = ["/skill:worktree delete fe"];
+  const suggestions = await context.autocomplete.getSuggestions(lines, 0, 25);
 
-  const picked = context.autocomplete.applyCompletion(lines, 0, 19, suggestions!.items[0]!, suggestions!.prefix);
+  const picked = context.autocomplete.applyCompletion(lines, 0, 25, suggestions!.items[0]!, suggestions!.prefix);
 
-  expect(picked.lines).toEqual(["/worktree delete feature-b"]);
+  expect(picked.lines).toEqual(["/skill:worktree delete feature-b"]);
 });
 
 test("tab after a finished argument in omp shows what can come next", async () => {
   const { context } = await makeSUT();
 
-  const suggestions = await context.autocomplete.getForceFileSuggestions?.(["/worktree delete feature-b "], 0, 27);
+  const suggestions = await context.autocomplete.getForceFileSuggestions?.(
+    ["/skill:worktree delete feature-b "],
+    0,
+    33,
+  );
 
   expect(rows(suggestions?.items)).toEqual(["--branch", "--remote"]);
 });
 
-test("omp answers every other prompt with its own suggestions", async () => {
+test("omp answers every other prompt, its own /worktree command included, with its own suggestions", async () => {
   const { context } = await makeSUT();
 
-  for (const line of ["/comm", "/worktree list "]) {
+  for (const line of ["/comm", "/worktree delete ", "/skill:worktree list "]) {
     const theirs = await context.ompsOwn.getSuggestions([line], 0, line.length);
     expect(await context.autocomplete.getSuggestions([line], 0, line.length)).toEqual(theirs);
   }
