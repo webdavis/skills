@@ -42,7 +42,7 @@ function worktree(earlier: string[]): NextArgument {
 function merge(earlier: string[]): NextArgument {
   if (earlier.at(-1) === "--policy") return { words: ["merge", "squash", "rebase"], values: [] };
   const methodGiven = earlier.some((word) => MERGE_METHODS.includes(word));
-  const flags = unused(["--keep", ...(methodGiven ? [] : MERGE_METHODS), "--policy"], earlier);
+  const flags = unused(["--keep", "--auto", ...(methodGiven ? [] : MERGE_METHODS), "--policy"], earlier);
   return { words: flags, values: earlier.length === 0 ? ["openPullRequests"] : [] };
 }
 

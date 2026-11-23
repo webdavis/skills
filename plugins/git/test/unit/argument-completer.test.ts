@@ -22,7 +22,7 @@ const FOLDERS = [
   { value: "src", description: "folder" },
   { value: "src/app", description: "folder" },
 ];
-const MERGE_FLAGS = ["--keep", "--merge", "--squash", "--rebase", "--policy"].map((value) => ({ value }));
+const MERGE_FLAGS = ["--keep", "--auto", "--merge", "--squash", "--rebase", "--policy"].map((value) => ({ value }));
 
 test("complete suggests /worktree's keywords, then the local and GitHub branches to make a worktree for", async () => {
   expect(await suggestionsFor("/worktree ")).toEqual([
@@ -78,7 +78,21 @@ test("complete suggests only /merge's flags after the pull request", async () =>
 });
 
 test("complete suggests no second merge method after /merge is given one", async () => {
-  expect(await suggestionsFor("/merge --squash --")).toEqual([{ value: "--keep" }, { value: "--policy" }]);
+  expect(await suggestionsFor("/merge --squash --")).toEqual([
+    { value: "--keep" },
+    { value: "--auto" },
+    { value: "--policy" },
+  ]);
+});
+
+test("complete still suggests a merge method once /merge is given --auto", async () => {
+  expect(await suggestionsFor("/merge --auto --")).toEqual([
+    { value: "--keep" },
+    { value: "--merge" },
+    { value: "--squash" },
+    { value: "--rebase" },
+    { value: "--policy" },
+  ]);
 });
 
 test("complete suggests the merge methods after /merge --policy", async () => {
