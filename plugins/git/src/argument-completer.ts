@@ -11,7 +11,7 @@ export interface Completion {
   suggestions: Suggestion[];
 }
 
-const SKILL_PROMPT = /^\s*\/(\S+)\s+(.*)$/s;
+const SKILL_PROMPT = /^\s*\/(?:git:|skill:)?(\S+)\s+(.*)$/s;
 
 function described(description: string) {
   return (value: string): Suggestion => ({ value, description });

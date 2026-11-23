@@ -90,6 +90,13 @@ test("complete suggests the merge methods after /merge --policy", async () => {
   ]);
 });
 
+test("complete suggests the same arguments after the plugin's or omp's skill prefix", async () => {
+  const plain = await suggestionsFor("/worktree delete ");
+
+  expect(await suggestionsFor("/git:worktree delete ")).toEqual(plain);
+  expect(await suggestionsFor("/skill:worktree delete ")).toEqual(plain);
+});
+
 async function suggestionsFor(textBeforeCursor: string) {
   return (await makeSUT().complete(textBeforeCursor))?.suggestions;
 }
