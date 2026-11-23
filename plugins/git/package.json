@@ -25,7 +25,8 @@
   "private": true,
   "type": "module",
   "files": [
-    "src"
+    "src",
+    "hooks"
   ],
   "omp": {
     "extensions": [
