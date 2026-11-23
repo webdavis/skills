@@ -33,6 +33,7 @@ export class ArgumentCompleter {
   }
 
   private async values(values?: Values): Promise<Suggestion[]> {
+    if (values === "branches") return (await this.names.branches()).map(described("branch"));
     if (values !== "names") return [];
     const worktrees = await this.names.worktrees();
     const otherBranches = (await this.names.branches()).filter((branch) => !worktrees.includes(branch));
