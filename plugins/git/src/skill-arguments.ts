@@ -1,4 +1,5 @@
-export type Values = "worktrees" | "localBranches" | "remoteBranches" | "pullRequests" | "folders";
+export type Values =
+  "worktrees" | "localBranches" | "remoteBranches" | "openPullRequests" | "closedPullRequests" | "folders";
 
 export interface NextArgument {
   words: string[];
@@ -8,6 +9,12 @@ export interface NextArgument {
 const NOTHING: NextArgument = { words: [], values: [] };
 const BRANCHES: Values[] = ["localBranches", "remoteBranches"];
 const MERGE_METHODS = ["--merge", "--squash", "--rebase"];
+const PR_ACTIONS: Record<string, Values> = {
+  status: "openPullRequests",
+  checkout: "openPullRequests",
+  close: "openPullRequests",
+  reopen: "closedPullRequests",
+};
 const COMMIT_POLICIES = ["tdd", "guard", "off"];
 
 function unused(flags: string[], earlier: string[]): string[] {
@@ -36,7 +43,7 @@ function merge(earlier: string[]): NextArgument {
   if (earlier.at(-1) === "--policy") return { words: ["merge", "squash", "rebase"], values: [] };
   const methodGiven = earlier.some((word) => MERGE_METHODS.includes(word));
   const flags = unused(["--keep", ...(methodGiven ? [] : MERGE_METHODS), "--policy"], earlier);
-  return { words: flags, values: earlier.length === 0 ? ["pullRequests"] : [] };
+  return { words: flags, values: earlier.length === 0 ? ["openPullRequests"] : [] };
 }
 
 function commit(earlier: string[]): NextArgument {
@@ -51,8 +58,9 @@ const SKILLS: Record<string, (earlier: string[]) => NextArgument> = {
   clean: (earlier) => (earlier.length === 0 ? { words: [], values: ["worktrees", ...BRANCHES] } : NOTHING),
   merge,
   pr: (earlier) => {
-    if (earlier.length === 0) return { words: ["close"], values: [] };
-    return earlier.length === 1 && earlier[0] === "close" ? { words: [], values: ["pullRequests"] } : NOTHING;
+    if (earlier.length === 0) return { words: Object.keys(PR_ACTIONS), values: [] };
+    const pullRequests = earlier.length === 1 ? PR_ACTIONS[earlier[0]!] : undefined;
+    return pullRequests ? { words: [], values: [pullRequests] } : NOTHING;
   },
   commit,
   git: (earlier) => (earlier.length === 0 ? { words: ["on", "off"], values: [] } : NOTHING),

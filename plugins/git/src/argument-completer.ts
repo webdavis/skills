@@ -1,4 +1,4 @@
-import type { PullRequests } from "./pull-requests.js";
+import type { PullRequest, PullRequests } from "./pull-requests.js";
 import type { Repository } from "./repository.js";
 import { nextArgument, type Values } from "./skill-arguments.js";
 
@@ -20,6 +20,13 @@ interface Candidate {
 
 function candidate(value: string, description?: string): Candidate {
   return { suggestion: description ? { value, description } : { value }, searchedText: [value] };
+}
+
+function pullRequestCandidate({ number, title, branch }: PullRequest): Candidate {
+  return {
+    suggestion: { value: String(number), label: `#${number} ${title}`, description: branch },
+    searchedText: [String(number), title, branch],
+  };
 }
 
 function matching(candidates: Candidate[], word: string): Suggestion[] {
@@ -68,11 +75,10 @@ export class ArgumentCompleter {
         return (await this.repository.remoteBranches()).map((name) => candidate(name, "GitHub branch"));
       case "folders":
         return (await this.repository.folders()).map((name) => candidate(name, "folder"));
-      case "pullRequests":
-        return (await this.pullRequests.open()).map(({ number, title, branch }) => ({
-          suggestion: { value: String(number), label: `#${number} ${title}`, description: branch },
-          searchedText: [String(number), title, branch],
-        }));
+      case "openPullRequests":
+        return (await this.pullRequests.open()).map(pullRequestCandidate);
+      case "closedPullRequests":
+        return (await this.pullRequests.closedUnmerged()).map(pullRequestCandidate);
     }
   }
 }

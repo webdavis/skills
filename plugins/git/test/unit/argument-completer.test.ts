@@ -89,9 +89,29 @@ test("complete suggests the merge methods after /merge --policy", async () => {
   ]);
 });
 
-test("complete suggests close after /pr, then the open pull requests", async () => {
-  expect(await suggestionsFor("/pr ")).toEqual([{ value: "close" }]);
+test("complete suggests /pr's keywords in the order the skill gives them", async () => {
+  expect(await suggestionsFor("/pr ")).toEqual([
+    { value: "status" },
+    { value: "checkout" },
+    { value: "close" },
+    { value: "reopen" },
+  ]);
+});
+
+test("complete suggests the open pull requests after /pr status, /pr checkout and /pr close", async () => {
+  expect(await suggestionsFor("/pr status ")).toEqual(PULL_REQUESTS);
+  expect(await suggestionsFor("/pr checkout ")).toEqual(PULL_REQUESTS);
   expect(await suggestionsFor("/pr close ")).toEqual(PULL_REQUESTS);
+});
+
+test("complete suggests the closed pull requests that were never merged after /pr reopen", async () => {
+  expect(await suggestionsFor("/pr reopen ")).toEqual([
+    { value: "7", label: "#7 Try a new theme", description: "theme" },
+  ]);
+});
+
+test("complete suggests nothing after /pr's pull request", async () => {
+  expect(await suggestionsFor("/pr status 12 ")).toEqual([]);
 });
 
 test("complete suggests --policy after /commit, then the policies and folders, then the folders", async () => {
