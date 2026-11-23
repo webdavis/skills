@@ -39,8 +39,10 @@ The words come in any order, and the shape of each word decides what it is:
 - **No path** checks every tracked file in the repository (`git ls-files`).
 - **No `lang:`** checks every language the target has rules for.
 
-The targets are the folders under `references/`. The languages are the rows of
-[`references/languages.md`](references/languages.md); read it to map a file to its language.
+The targets are the `<target>-rules.md` files under `references/`:
+[`naming`](references/naming-rules.md) and [`posix`](references/posix-rules.md). The languages are
+the rows of [`references/languages.md`](references/languages.md); read it to map a file to its
+language.
 
 Stop and scan nothing when a word is not a known target, a known language, or an existing path, or
 when two targets are given. Print the usage line and the valid targets and languages. A guess here
@@ -63,7 +65,7 @@ target does not apply to it.
 
 ## Running a target
 
-Read `references/<target>/rules.md`. It says what counts as bullshit for that target and how to find
+Read `references/<target>-rules.md`. It says what counts as bullshit for that target and how to find
 it. When a file's language has an overlay named in `references/languages.md`, read that too; an
 overlay holds only what differs for that language.
 

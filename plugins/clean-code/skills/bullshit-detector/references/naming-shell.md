@@ -1,6 +1,6 @@
 # Naming in sh and bash
 
-Read with `rules.md`. Only what differs for shell is here.
+Read with `naming-rules.md`. Only what differs for shell is here.
 
 - **Case.** Functions and variables are `snake_case`. Constants set once with `readonly` keep the
   same lowercase style; all capitals is for variables the environment provides.
