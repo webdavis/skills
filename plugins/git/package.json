@@ -1,0 +1,50 @@
+{
+  "name": "webdavis-git",
+  "version": "0.3.0",
+  "description": "Git and GitHub flows: one conventional commit at a time, pull requests through gh-axi, worktrunk-aware branch cleanup.",
+  "keywords": [
+    "omp",
+    "oh-my-pi",
+    "omp-plugin",
+    "omp-extension",
+    "claude-code",
+    "git",
+    "autocomplete"
+  ],
+  "license": "MIT",
+  "author": "Stephen A. Davis (https://github.com/webdavis)",
+  "homepage": "https://github.com/webdavis/skills#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/webdavis/skills.git",
+    "directory": "plugins/git"
+  },
+  "bugs": {
+    "url": "https://github.com/webdavis/skills/issues"
+  },
+  "private": true,
+  "type": "module",
+  "files": [
+    "src",
+    "hooks"
+  ],
+  "omp": {
+    "extensions": [
+      "./src/git-completion.ts"
+    ]
+  },
+  "scripts": {
+    "test": "bun test test/unit",
+    "test:omp": "bun test test/omp",
+    "test:all": "bun test",
+    "check": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@oh-my-pi/pi-coding-agent": "19.1.0",
+    "@types/bun": "^1.4.5",
+    "prettier": "^3.10.1",
+    "typescript": "^7.0.2"
+  }
+}

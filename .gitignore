@@ -1,3 +1,4 @@
 *-workspace/
 .claude/commands/*-skill-*.md
 .DS_Store
+node_modules/
