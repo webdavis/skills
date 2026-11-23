@@ -7,7 +7,7 @@
     {
       "name": "clean-code",
       "source": "./plugins/clean-code",
-      "description": "The clean-code method for layered tools, with its Rust and Swift spellings, and a detector for code that says one thing and does another."
+      "description": "The clean-code method for layered tools, with its Rust and Swift spellings, a detector for code that says one thing and does another, and a dependency diagram of the repository."
     },
     {
       "name": "tiktok-crawling",
