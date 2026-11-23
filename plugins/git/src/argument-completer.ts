@@ -45,6 +45,7 @@ export class ArgumentCompleter {
     private readonly repository: Repository,
     private readonly pullRequests: PullRequests,
     commandPrefixes: string[],
+    private readonly agentBranch: () => string | undefined = () => undefined,
   ) {
     const longestFirst = [...commandPrefixes].sort((a, b) => b.length - a.length);
     this.skillPrompt = new RegExp(`^\\s*/(?:${longestFirst.join("|")})(\\S+)\\s+(.*)$`, "s");
@@ -68,7 +69,7 @@ export class ArgumentCompleter {
   private async candidates(values: Values): Promise<Candidate[]> {
     switch (values) {
       case "worktrees":
-        return (await this.repository.worktrees()).map((name) => candidate(name, "worktree"));
+        return this.worktreesAgentFirst();
       case "localBranches":
         return (await this.repository.localBranches()).map((name) => candidate(name, "branch"));
       case "remoteBranches":
@@ -80,5 +81,13 @@ export class ArgumentCompleter {
       case "closedPullRequests":
         return (await this.pullRequests.closedUnmerged()).map(pullRequestCandidate);
     }
+  }
+
+  private async worktreesAgentFirst(): Promise<Candidate[]> {
+    const worktrees = await this.repository.worktrees();
+    const agent = this.agentBranch();
+    if (!agent || !worktrees.includes(agent)) return worktrees.map((name) => candidate(name, "worktree"));
+    const others = worktrees.filter((name) => name !== agent);
+    return [candidate(agent, "agent"), ...others.map((name) => candidate(name, "worktree"))];
   }
 }

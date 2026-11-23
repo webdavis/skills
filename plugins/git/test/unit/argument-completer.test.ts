@@ -162,6 +162,18 @@ test("complete leaves alone a command form the host keeps for something else", a
   expect(await sut.complete("/skill:worktree delete ")).toBeDefined();
 });
 
+test("complete lists the worktree the agent last worked in first, tagged agent", async () => {
+  const sut = new ArgumentCompleter(new RepositoryStub(), new PullRequestsStub(), [""], () => "feature-b");
+  const agentFirst = [
+    { value: "feature-b", description: "agent" },
+    { value: "main", description: "worktree" },
+  ];
+
+  expect((await sut.complete("/worktree delete "))?.suggestions).toEqual(agentFirst);
+  expect((await sut.complete("/worktree catchup "))?.suggestions).toEqual([{ value: "--with" }, ...agentFirst]);
+  expect((await sut.complete("/clean "))?.suggestions.slice(0, 2)).toEqual(agentFirst);
+});
+
 async function suggestionsFor(textBeforeCursor: string) {
   return (await makeSUT().complete(textBeforeCursor))?.suggestions;
 }
