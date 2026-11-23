@@ -57,6 +57,27 @@ test("closedUnmerged answers nothing when gh is missing or fails", async () => {
   expect(await sut.closedUnmerged()).toEqual([]);
 });
 
+const GH_OPEN_WITH_DRAFTS = JSON.stringify([
+  { number: 15, title: "Sketch the settings page", headRefName: "settings", isDraft: true },
+  { number: 12, title: "Add the login page", headRefName: "feature-login", isDraft: false },
+]);
+
+test("openDrafts asks gh for the open pull requests and whether each is a draft", async () => {
+  const { sut, shell } = makeSUT(GH_OPEN_WITH_DRAFTS);
+
+  await sut.openDrafts();
+
+  expect(shell.messages).toEqual([
+    ["gh", "pr", "list", "--state", "open", "--json", "number,title,headRefName,isDraft"],
+  ]);
+});
+
+test("openDrafts answers only the drafts", async () => {
+  const { sut } = makeSUT(GH_OPEN_WITH_DRAFTS);
+
+  expect(await sut.openDrafts()).toEqual([{ number: 15, title: "Sketch the settings page", branch: "settings" }]);
+});
+
 function makeSUT(output: string) {
   const shell = new ShellStub(output);
   const sut = new GhPullRequests(shell);

@@ -16,4 +16,8 @@ export class CachedPullRequests implements PullRequests {
   async closedUnmerged(): Promise<PullRequest[]> {
     return this.cache.read(`${await this.repository.root()} closed unmerged`, () => this.github.closedUnmerged());
   }
+
+  async openDrafts(): Promise<PullRequest[]> {
+    return this.cache.read(`${await this.repository.root()} open drafts`, () => this.github.openDrafts());
+  }
 }

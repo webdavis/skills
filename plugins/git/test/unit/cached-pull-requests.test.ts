@@ -37,6 +37,18 @@ test("closedUnmerged keeps the closed pull requests apart from the open ones", a
   expect(github.messages).toEqual(["open", "closedUnmerged"]);
 });
 
+test("openDrafts keeps the drafts apart from the other lists", async () => {
+  const { sut, github } = makeSUT();
+  await sut.open();
+  await github.answer([LOGIN]);
+
+  expect(await sut.openDrafts()).toEqual([]);
+  await github.answer([THEME]);
+
+  expect(await sut.openDrafts()).toEqual([THEME]);
+  expect(github.messages).toEqual(["open", "openDrafts"]);
+});
+
 function makeSUT() {
   const cache = new PullRequestCache(() => 0);
   const github = new PullRequestsSpy();

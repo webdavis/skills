@@ -11,4 +11,8 @@ export class PullRequestsStub implements PullRequests {
   async closedUnmerged(): Promise<PullRequest[]> {
     return [{ number: 7, title: "Try a new theme", branch: "theme" }];
   }
+
+  async openDrafts(): Promise<PullRequest[]> {
+    return [{ number: 15, title: "Sketch the settings page", branch: "settings" }];
+  }
 }

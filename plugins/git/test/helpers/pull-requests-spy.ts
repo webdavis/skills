@@ -12,6 +12,10 @@ export class PullRequestsSpy implements PullRequests {
     return this.ask("closedUnmerged");
   }
 
+  openDrafts(): Promise<PullRequest[]> {
+    return this.ask("openDrafts");
+  }
+
   private ask(message: string): Promise<PullRequest[]> {
     this.messages.push(message);
     const answer = Promise.withResolvers<PullRequest[]>();

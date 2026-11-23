@@ -1,7 +1,13 @@
 import type { PullRequest, PullRequests } from "./pull-requests.js";
 import type { Shell } from "./shell.js";
 
-type GhPullRequest = { number: number; title: string; headRefName: string; mergedAt?: string | null };
+type GhPullRequest = {
+  number: number;
+  title: string;
+  headRefName: string;
+  mergedAt?: string | null;
+  isDraft?: boolean;
+};
 
 function parsed(output: string): GhPullRequest[] {
   try {
@@ -25,6 +31,11 @@ export class GhPullRequests implements PullRequests {
   async closedUnmerged(): Promise<PullRequest[]> {
     const closed = parsed(await this.list("closed", "number,title,headRefName,mergedAt"));
     return closed.filter(({ mergedAt }) => !mergedAt).map(asPullRequest);
+  }
+
+  async openDrafts(): Promise<PullRequest[]> {
+    const open = parsed(await this.list("open", "number,title,headRefName,isDraft"));
+    return open.filter(({ isDraft }) => isDraft).map(asPullRequest);
   }
 
   private list(state: string, fields: string): Promise<string> {
