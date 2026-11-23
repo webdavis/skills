@@ -2,12 +2,13 @@
 name: depgraph
 description: >-
   Draw a dependency diagram of the repository you are in, as a picture: modules and the links
-  between them, the files inside chosen modules, the functions and types inside those files, or
-  only the code changed on the current branch. Arguments: `[--modules [name ...]]
-  [--changed[=<ref>]] [--symbols] [--output <file.svg|file.png>]`. It shows the picture in the
-  session and writes a file only when `--output` names one.
+  between them, the files inside chosen modules, the functions and types inside those files, only
+  the code changed on the current branch, or the code behind a feature you describe. Arguments:
+  `[description] [--modules [name ...]] [--changed[=<ref>]] [--symbols]
+  [--output <file.svg|file.png>]`. It shows the picture in the session and writes a file only when
+  `--output` names one.
 disable-model-invocation: true
-argument-hint: "[--modules [name ...]] [--changed[=<ref>]] [--symbols] [--output <file.svg|file.png>]"
+argument-hint: "[description] [--modules [name ...]] [--changed[=<ref>]] [--symbols] [--output <file.svg|file.png>]"
 compatibility: Requires the d2 program on PATH, and git for --changed.
 ---
 
@@ -27,16 +28,19 @@ that a plain word is never taken for the wrong thing:
 
 | Part | Rule |
 | --- | --- |
+| Description | Every word before the first flag, taken together as free text. |
 | `--modules` | Takes the names that follow it, up to the next flag. No names means every module. |
 | `--changed` | Alone, compares against the default branch. A starting point is attached with `=`, as in `--changed=HEAD~3`. |
-| `--symbols` | Takes nothing. Valid only with `--modules` or `--changed`. |
+| `--symbols` | Takes nothing. Valid only with `--modules`, `--changed` or a description. |
 | `--output` | Takes one path ending in `.svg` or `.png`. |
 
 Stop and say what is wrong, drawing nothing, when:
 
-- `--symbols` is given with neither `--modules` nor `--changed`. Tell the user to add `--modules`.
+- `--symbols` is given with none of `--modules`, `--changed` or a description. Tell the user to add
+  `--modules`.
 - `--output` names a file that is not `.svg` or `.png`.
 - a name after `--modules` matches no module. List the modules that exist.
+- a description and `--changed` are both given. They are two different scopes; ask for one.
 
 ## What each request draws
 
@@ -46,9 +50,10 @@ Stop and say what is wrong, drawing nothing, when:
 | `--modules` | Every module as a group, with one box per source file inside | File to file |
 | `--modules a b` | Only the named modules, opened the same way. A file outside them that a shown file depends on, or that depends on a shown file, is left out. | File to file |
 | `--changed` | The changed files, plus their direct neighbours, grouped by module | File to file |
-| any of the last three with `--symbols` | Each file becomes a group holding one box per top-level declaration in it | See "Symbols" |
+| description | The files that implement what was described, plus their direct neighbours, grouped by module | File to file |
+| any of the last four with `--symbols` | Each file becomes a group holding one box per top-level declaration in it | See "Symbols" |
 
-`--modules` narrows `--changed` to the named modules.
+`--modules` narrows `--changed` or a description to the named modules.
 
 A direct neighbour is a file one step away: something the chosen code depends on, or something that
 depends on it. Neighbours give the chosen code its context. Go one step only, because a second step
@@ -112,6 +117,15 @@ its new name. For a removed file, read its old content with `git show <merge-bas
 what it depended on, and search the current code for anything that still refers to it.
 
 Give neighbour boxes the `neighbour` class, which dims them.
+
+## Described code
+
+A description such as "the agent listing feature" has no exact boundary in code, so choosing the
+files is a judgement. Search for the names, commands and types the description points at, follow
+them to the files that implement them, and stop at the edge of the feature. Mark the chosen files
+with no prefix, and give their direct neighbours the `neighbour` class.
+
+Always list the files you chose in the reply, so the user can see when the judgement was wrong.
 
 ## Symbols
 
@@ -232,4 +246,5 @@ Keep the reply short. After the picture and its path, state:
   for context only, `+` added, `~` modified, `-` removed, long-dashed arrow with a hollow head for
   "implements", short-dashed arrow for inferred;
 - every link that was inferred rather than read from an import or build file, or "none";
+- for a description, the files chosen;
 - for `--changed`, the starting point used.
