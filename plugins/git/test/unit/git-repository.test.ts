@@ -53,6 +53,27 @@ test("root answers the top folder of the repository from any folder inside it", 
   expect(await makeSUT(`${repo.path}/src/app`).root()).toBe(repo.path);
 });
 
+test("branchCommits answers the branch's own commits since origin/main, newest first", async () => {
+  const repo = new ScratchRepo().onGitHub("main").onNewBranch("feature").commit("Add the form").commit("Fix the label");
+
+  const commits = await makeSUT(repo.path).branchCommits();
+
+  expect(commits.map(({ subject }) => subject)).toEqual(["Fix the label", "Add the form"]);
+  expect(commits[0]?.sha).toMatch(/^[0-9a-f]{7,}$/);
+});
+
+test("branchCommits counts from the base the branch remembers", async () => {
+  const repo = new ScratchRepo().onGitHub("main").onNewBranch("base").commit("On the base");
+  repo.onNewBranch("feature").commit("On the feature").config("branch.feature.base", "base");
+
+  expect((await makeSUT(repo.path).branchCommits()).map(({ subject }) => subject)).toEqual(["On the feature"]);
+});
+
+test("branchCommits answers nothing on main itself or without a base to count from", async () => {
+  expect(await makeSUT(new ScratchRepo().onGitHub("main").path).branchCommits()).toEqual([]);
+  expect(await makeSUT(new ScratchRepo().onNewBranch("feature").commit("x").path).branchCommits()).toEqual([]);
+});
+
 function makeSUT(cwd: string) {
   return new GitRepository(new BunShell(cwd));
 }

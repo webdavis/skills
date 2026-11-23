@@ -1,4 +1,4 @@
-import type { Repository } from "../../src/repository.js";
+import type { Commit, Repository } from "../../src/repository.js";
 
 export class RepositoryStub implements Repository {
   readonly rootPath = "/a/repo";
@@ -21,5 +21,12 @@ export class RepositoryStub implements Repository {
 
   async folders(): Promise<string[]> {
     return ["docs", "src", "src/app"];
+  }
+
+  async branchCommits(): Promise<Commit[]> {
+    return [
+      { sha: "1a2b3c4", subject: "Fix the label" },
+      { sha: "5d6e7f8", subject: "Add the form" },
+    ];
   }
 }

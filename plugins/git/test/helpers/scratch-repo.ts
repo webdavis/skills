@@ -35,6 +35,31 @@ export class ScratchRepo {
     return this;
   }
 
+  onNewBranch(branch: string): this {
+    this.git("switch", "--quiet", "-c", branch);
+    return this;
+  }
+
+  commit(subject: string): this {
+    this.git(
+      "-c",
+      "user.name=test",
+      "-c",
+      "user.email=test@example.com",
+      "commit",
+      "--quiet",
+      "--allow-empty",
+      "-m",
+      subject,
+    );
+    return this;
+  }
+
+  config(key: string, value: string): this {
+    this.git("config", key, value);
+    return this;
+  }
+
   removeWorktree(branch: string): this {
     this.git("worktree", "remove", `${this.path}-${branch}`);
     return this;

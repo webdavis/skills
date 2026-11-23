@@ -1,4 +1,4 @@
-import type { Repository } from "./repository.js";
+import type { Commit, Repository } from "./repository.js";
 import type { Shell } from "./shell.js";
 
 const BRANCH = "branch refs/heads/";
@@ -32,6 +32,17 @@ export class GitRepository implements Repository {
   async folders(): Promise<string[]> {
     const files = lines(await this.git("ls-files", "--cached", "--others", "--exclude-standard"));
     return [...new Set(files.flatMap(foldersAbove))].sort();
+  }
+
+  async branchCommits(): Promise<Commit[]> {
+    const branch = (await this.git("branch", "--show-current")).trim();
+    if (!branch) return [];
+    const base = (await this.git("config", `branch.${branch}.base`)).trim() || "origin/main";
+    const log = lines(await this.git("log", "--format=%h%x09%s", `${base}..HEAD`));
+    return log.map((line) => {
+      const [sha = "", ...subject] = line.split("\t");
+      return { sha, subject: subject.join("\t") };
+    });
   }
 
   async root(): Promise<string> {
