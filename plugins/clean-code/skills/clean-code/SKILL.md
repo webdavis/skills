@@ -24,11 +24,11 @@ counting commands). Nothing here repeats them, so the two cannot disagree.
 
 Three references, consulted rather than read front to back:
 
-- [`ARCHITECTURE.md`](ARCHITECTURE.md): the five module roles, the extension model, SOLID, choosing
+- [`ARCHITECTURE.md`](references/ARCHITECTURE.md): the five module roles, the extension model, SOLID, choosing
   an abstraction, outcomes, concurrency, public API discipline, file-size rules.
-- [`TESTING.md`](TESTING.md): new behavior versus a pure move, the mutation table, the speed gate,
+- [`TESTING.md`](references/TESTING.md): new behavior versus a pure move, the mutation table, the speed gate,
   the sandbox rule, the test levels.
-- [`PERSISTENCE.md`](PERSISTENCE.md): classifying durable state, a database versus the filesystem,
+- [`PERSISTENCE.md`](references/PERSISTENCE.md): classifying durable state, a database versus the filesystem,
   delivery safety, configuration and secrets.
 
 ## Priorities, in order
@@ -110,7 +110,7 @@ in the first PR's description. Every PR:
 - leaves `main` deployable;
 - states which kind of work it is, **new behavior**, **pure move**, or **move with a recorded change**
   (a move that also fixes a behavior by decision: the decision record names it and the differential
-  shows exactly that delta), with the evidence [`TESTING.md`](TESTING.md) demands for that kind;
+  shows exactly that delta), with the evidence [`TESTING.md`](references/TESTING.md) demands for that kind;
 - for a tool with a command-line surface, passes a differential over the frozen surface against the
   binary built from the previous `main`, **with a control mutant the differential is shown to catch**.
   A PR that changes no production code says so in place of the differential.
@@ -131,7 +131,7 @@ never ships.
 - **One split per oversized file per PR.** Split by responsibility. If one of the resulting pieces
   cannot be described in one sentence, keep the file whole and record it in the exceptions table with
   the sentence that failed. Never split by `part_1`, never move code into `utils` to shrink a number.
-- **One mutant per changed behavior.** The mutation table ([`TESTING.md`](TESTING.md)) has one row
+- **One mutant per changed behavior.** The mutation table ([`TESTING.md`](references/TESTING.md)) has one row
   per behavior the PR adds or changes, plus the control row. When every row names its killing
   assertion or carries an intermediate-state argument, mutation work is finished.
 - **The ladder has a length.** If the PR count passes twice the number written in the first PR, stop

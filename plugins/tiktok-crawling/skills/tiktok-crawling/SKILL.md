@@ -163,4 +163,4 @@ Template fields: `%(id)s`, `%(uploader)s`, `%(upload_date)s`, `%(title).50s` (fi
 `%(view_count)s`, `%(like_count)s`, `%(ext)s`.
 [Full template reference](https://github.com/yt-dlp/yt-dlp#output-template).
 
-Based on RomneyDa's `tiktok-crawling` ClawHub skill; see `skill-card.md`.
+Based on RomneyDa's `tiktok-crawling` ClawHub skill; see `references/skill-card.md`.

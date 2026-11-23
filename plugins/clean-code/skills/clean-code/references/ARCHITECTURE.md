@@ -1,7 +1,7 @@
 # Architecture
 
 The module roles, the extension model, SOLID, and how to choose an abstraction. Reference for
-[`SKILL.md`](SKILL.md). The language skill names the concrete construct behind every "unit" here (a
+[`SKILL.md`](../SKILL.md). The language skill names the concrete construct behind every "unit" here (a
 crate, a target, a package) and the command that enforces the direction.
 
 ## The five roles
@@ -167,4 +167,4 @@ language-specific and a generic line counter mis-parses these trees. The rules t
   cryptic names, macros, `part_1` files and `utils` dumps all count as gaming and are reverted.
 - A file-size check is not a test. Tests pin the behavior of the tool; a meta-test about code shape
   is deleted on sight. The completion report carries the counting command's full output instead.
-- One split attempt per oversized file per pull request ([`SKILL.md`](SKILL.md), Termination).
+- One split attempt per oversized file per pull request ([`SKILL.md`](../SKILL.md), Termination).

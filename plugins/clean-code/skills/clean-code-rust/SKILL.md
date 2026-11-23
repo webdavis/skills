@@ -145,7 +145,7 @@ on `toml::Value` or free-form tables.
 
 New behavior is written test-first under `cargo test`; a pure move owes a test that already pins the
 behavior, written before the move if none exists; every changed behavior gets a mutation-table row
-(`../clean-code/TESTING.md`).
+(`../clean-code/references/TESTING.md`).
 
 Unit tests live beside their implementation under `#[cfg(test)] mod tests;`; a large module may live
 in a private child file (`src/x.rs` beside `src/x/tests.rs`), still `cfg(test)`, still not shipped.

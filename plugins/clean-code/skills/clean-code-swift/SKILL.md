@@ -123,7 +123,7 @@ unexplained suppression. Every spawned task has an owner, a deadline and a cance
 ## Tests
 
 The method's obligations are unchanged: test-first for new behavior, proof of no change for a move,
-one mutation-table row per changed behavior (`../clean-code/TESTING.md`), a deadline on anything that
+one mutation-table row per changed behavior (`../clean-code/references/TESTING.md`), a deadline on anything that
 can hang. These five patterns are how the case study spells them; copy them.
 
 **A contract suite is a protocol whose method names are the test names:**
