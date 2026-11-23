@@ -30,6 +30,15 @@ export class ScratchRepo {
     return this;
   }
 
+  removeWorktree(branch: string): this {
+    this.git("worktree", "remove", `${this.path}-${branch}`);
+    return this;
+  }
+
+  get name(): string {
+    return this.path.split("/").pop()!;
+  }
+
   detachedWorktree(): this {
     this.git("worktree", "add", "--quiet", "--detach", `${this.path}-detached`);
     return this;
