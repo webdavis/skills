@@ -3,6 +3,7 @@ name: clean
 description: Find stale git branches and worktrees, local and on GitHub, judge each one, and delete only what the owner confirms. Use when asked to clean up, prune or tidy branches or worktrees, or to remove everything for one branch name. Never runs `git clean`.
 argument-hint: "[<name>]"
 allowed-tools:
+  - Bash(git config:*)
   - Bash(git status:*)
   - Bash(git log:*)
   - Bash(git diff:*)
@@ -20,6 +21,10 @@ allowed-tools:
 ---
 
 # Clean
+
+First check the policy switch as `${CLAUDE_PLUGIN_ROOT}/skills/git/SKILL.md` says (outside Claude
+Code, `../git/SKILL.md`). When it is off, act as plain git: do what was asked with none of this
+plugin's policy.
 
 Delete branches and worktrees that are no longer needed, and nothing that holds work found nowhere
 else unless the owner says yes. This skill never runs `git clean`; files outside git are not its

@@ -3,6 +3,7 @@ name: commit
 description: Make one commit for one step of work, checked against the repository's commit policy, and set that policy with --policy. Use when asked to commit changes, or to choose how strictly a repository or folder is tested before commits (tdd, guard, off). Never pushes.
 argument-hint: "[--policy [tdd|guard|off] [<folder>]]"
 allowed-tools:
+  - Bash(git config:*)
   - Bash(git status:*)
   - Bash(git diff:*)
   - Bash(git add:*)
@@ -18,6 +19,10 @@ allowed-tools:
 ---
 
 # Commit
+
+First check the policy switch as `${CLAUDE_PLUGIN_ROOT}/skills/git/SKILL.md` says (outside Claude
+Code, `../git/SKILL.md`). When it is off, act as plain git: do what was asked with none of this
+plugin's policy.
 
 Make one commit from the current changes. The repository's commit policy decides which tests must
 pass first; read `${CLAUDE_PLUGIN_ROOT}/skills/commit/references/commit-policy.md` (outside Claude

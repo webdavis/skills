@@ -24,6 +24,10 @@ allowed-tools:
 
 # Worktree
 
+First check the policy switch as `${CLAUDE_PLUGIN_ROOT}/skills/git/SKILL.md` says (outside Claude
+Code, `../git/SKILL.md`). When it is off, act as plain git: do what was asked with none of this
+plugin's policy.
+
 One worktree per branch. Each branch remembers what it was built on in its git config:
 `branch.<name>.base` is the base branch and `branch.<name>.baseTip` the base's commit when the branch
 was last built on it.

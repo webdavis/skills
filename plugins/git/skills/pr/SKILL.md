@@ -3,6 +3,7 @@ name: pr
 description: Commit any pending work, push it and open GitHub pull requests with checked bodies, as drafts with --draft; `/pr status` reports where pull requests stand, `/pr checkout` gives one its own worktree, `/pr ready` marks a draft ready, and `/pr close` and `/pr reopen` close and reopen one. Use when asked to open, create, send, check on, check out, ready, close or reopen a pull request. Each unrelated piece of pending work gets its own branch and pull request, moved off main first. Never merges.
 argument-hint: "[--draft] [status | checkout | ready | close | reopen] [<number>]"
 allowed-tools:
+  - Bash(git config:*)
   - Bash(git status:*)
   - Bash(git diff:*)
   - Bash(git log:*)
@@ -30,6 +31,10 @@ allowed-tools:
 ---
 
 # PR
+
+First check the policy switch as `${CLAUDE_PLUGIN_ROOT}/skills/git/SKILL.md` says (outside Claude
+Code, `../git/SKILL.md`). When it is off, act as plain git: do what was asked with none of this
+plugin's policy.
 
 Commit any pending work, push it and open one pull request per unrelated piece of work. Opening
 them is where this skill stops; it never merges.

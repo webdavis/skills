@@ -23,6 +23,10 @@ allowed-tools:
 
 # Amend
 
+First check the policy switch as `${CLAUDE_PLUGIN_ROOT}/skills/git/SKILL.md` says (outside Claude
+Code, `../git/SKILL.md`). When it is off, act as plain git: do what was asked with none of this
+plugin's policy.
+
 Change an existing commit so it does what its message says, as one step.
 
 ## When to amend
