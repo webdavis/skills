@@ -47,6 +47,12 @@ test("folders answers every folder holding a tracked or new file, leaving out wh
   expect(await makeSUT(repo.path).folders()).toEqual(["docs", "src", "src/app"]);
 });
 
+test("root answers the top folder of the repository from any folder inside it", async () => {
+  const repo = new ScratchRepo().file("src/app/main.ts");
+
+  expect(await makeSUT(`${repo.path}/src/app`).root()).toBe(repo.path);
+});
+
 function makeSUT(cwd: string) {
   return new GitRepository(new BunShell(cwd));
 }

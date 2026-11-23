@@ -1,0 +1,31 @@
+import { expect, test } from "bun:test";
+import { CachedPullRequests } from "../../src/cached-pull-requests.js";
+import { PullRequestCache } from "../../src/pull-request-cache.js";
+import { PullRequestsSpy } from "../helpers/pull-requests-spy.js";
+import { RepositoryStub } from "../helpers/repository-stub.js";
+
+const LOGIN = { number: 12, title: "Add the login page", branch: "feature-login" };
+
+test("open answers nothing at once and asks GitHub in the background", async () => {
+  const { sut, github } = makeSUT();
+
+  expect(await sut.open()).toEqual([]);
+  expect(github.messages).toEqual(["open"]);
+});
+
+test("open answers the pull requests GitHub gave for the repository once they arrive", async () => {
+  const { sut, github, cache } = makeSUT();
+  await sut.open();
+
+  await github.answer([LOGIN]);
+
+  expect(await sut.open()).toEqual([LOGIN]);
+  expect(cache.open(new RepositoryStub().rootPath, github)).toEqual([LOGIN]);
+});
+
+function makeSUT() {
+  const cache = new PullRequestCache(() => 0);
+  const github = new PullRequestsSpy();
+  const sut = new CachedPullRequests(cache, new RepositoryStub(), github);
+  return { sut, github, cache };
+}

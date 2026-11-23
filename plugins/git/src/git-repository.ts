@@ -34,6 +34,10 @@ export class GitRepository implements Repository {
     return [...new Set(files.flatMap(foldersAbove))].sort();
   }
 
+  async root(): Promise<string> {
+    return (await this.git("rev-parse", "--show-toplevel")).trim();
+  }
+
   private git(...args: string[]): Promise<string> {
     return this.shell.run(["git", ...args]);
   }
