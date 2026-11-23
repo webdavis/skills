@@ -1,4 +1,4 @@
-import type { PullRequest, PullRequests } from "./pull-requests.js";
+import type { PullRequest } from "./pull-requests.js";
 
 const MAX_AGE_MS = 30_000;
 
@@ -13,17 +13,17 @@ export class PullRequestCache {
 
   constructor(private readonly now: () => number = Date.now) {}
 
-  open(repository: string, github: PullRequests): PullRequest[] {
-    const entry = this.entries.get(repository) ?? { pullRequests: [], fetchedAt: -Infinity, refreshing: false };
-    this.entries.set(repository, entry);
-    if (!entry.refreshing && this.now() - entry.fetchedAt >= MAX_AGE_MS) void this.refresh(entry, github);
+  read(key: string, load: () => Promise<PullRequest[]>): PullRequest[] {
+    const entry = this.entries.get(key) ?? { pullRequests: [], fetchedAt: -Infinity, refreshing: false };
+    this.entries.set(key, entry);
+    if (!entry.refreshing && this.now() - entry.fetchedAt >= MAX_AGE_MS) void this.refresh(entry, load);
     return entry.pullRequests;
   }
 
-  private async refresh(entry: Entry, github: PullRequests): Promise<void> {
+  private async refresh(entry: Entry, load: () => Promise<PullRequest[]>): Promise<void> {
     entry.refreshing = true;
     try {
-      entry.pullRequests = await github.open();
+      entry.pullRequests = await load();
       entry.fetchedAt = this.now();
     } catch {
       // The cached pull requests stay until GitHub answers again.

@@ -20,7 +20,7 @@ test("open answers the pull requests GitHub gave for the repository once they ar
   await github.answer([LOGIN]);
 
   expect(await sut.open()).toEqual([LOGIN]);
-  expect(cache.open(new RepositoryStub().rootPath, github)).toEqual([LOGIN]);
+  expect(cache.read(`${new RepositoryStub().rootPath} open`, () => github.open())).toEqual([LOGIN]);
 });
 
 function makeSUT() {
