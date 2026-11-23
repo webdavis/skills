@@ -2,6 +2,7 @@
 name: pr
 description: Commit any pending work, push it and open GitHub pull requests with checked bodies, as drafts with --draft; `/pr status` reports where pull requests stand, `/pr checkout` gives one its own worktree, `/pr ready` marks a draft ready, and `/pr close` and `/pr reopen` close and reopen one. Use when asked to open, create, send, check on, check out, ready, close or reopen a pull request. Each unrelated piece of pending work gets its own branch and pull request, moved off main first. Never merges.
 argument-hint: "[--draft] [status | checkout | ready | close | reopen] [<number>]"
+disable-model-invocation: true
 allowed-tools:
   - Bash(git config:*)
   - Bash(git status:*)

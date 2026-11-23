@@ -2,6 +2,7 @@
 name: merge
 description: Merge the current branch's GitHub pull request once its checks pass, or turn on auto-merge with --auto, then pull main and remove the branch's worktree and GitHub branch. Use when asked to merge or land a pull request, or with --policy to set which merge methods the GitHub repository allows.
 argument-hint: "[<pr>] [--keep] [--auto] [--merge|--squash|--rebase] [--policy merge|squash|rebase]"
+disable-model-invocation: true
 allowed-tools:
   - Bash(git config:*)
   - Bash(git status:*)

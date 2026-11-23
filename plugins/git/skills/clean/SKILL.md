@@ -2,6 +2,7 @@
 name: clean
 description: Find stale git branches and worktrees, local and on GitHub, judge each one, and delete only what the owner confirms. Use when asked to clean up, prune or tidy branches or worktrees, or to remove everything for one branch name. Never runs `git clean`.
 argument-hint: "[<name>]"
+disable-model-invocation: true
 allowed-tools:
   - Bash(git config:*)
   - Bash(git status:*)

@@ -2,6 +2,7 @@
 name: commit
 description: Make one commit for one step of work, checked against the repository's commit policy, and set that policy with --policy. Use when asked to commit changes, or to choose how strictly a repository or folder is tested before commits (tdd, guard, off). Never pushes.
 argument-hint: "[--policy [tdd|guard|off] [<folder>]]"
+disable-model-invocation: true
 allowed-tools:
   - Bash(git config:*)
   - Bash(git status:*)

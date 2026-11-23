@@ -2,6 +2,7 @@
 name: amend
 description: Correct a commit on a topic branch so it is true to its one step, the latest or an older one, and force-push it when it was already pushed. Use when asked to amend, fix up or squash a commit, or to fix a typo, a missing file or a wrong message in one.
 argument-hint: "[<commit>] [<what to fix>]"
+disable-model-invocation: true
 allowed-tools:
   - Bash(git status:*)
   - Bash(git diff:*)

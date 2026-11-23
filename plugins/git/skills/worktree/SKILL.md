@@ -2,6 +2,7 @@
 name: worktree
 description: Make, list, delete and catch up git worktrees, one per branch, each remembering the branch it was built on. Use to start work on a branch in its own worktree, see which worktrees are merged or behind, remove one, or rebase worktrees onto their updated or merged base.
 argument-hint: "[<name> | list | delete <name> [--branch] [--remote] | catchup [<name>] [--with <branch>]]"
+disable-model-invocation: true
 allowed-tools:
   - Bash(git status:*)
   - Bash(git log:*)
