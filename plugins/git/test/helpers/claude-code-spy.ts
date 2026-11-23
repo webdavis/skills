@@ -11,6 +11,7 @@ export class ClaudeCodeSpy {
   private readonly hooks = new Map<string, Hook>();
   private ownRows: Row[] = [];
   private gitStarts = true;
+  private github: object[] = [];
 
   constructor(private readonly cwd: string) {}
 
@@ -26,6 +27,10 @@ export class ClaudeCodeSpy {
     this.gitStarts = false;
   }
 
+  githubHasOpen(...pullRequests: { number: number; title: string; headRefName: string }[]): void {
+    this.github = pullRequests;
+  }
+
   async typeInPrompt(text: string): Promise<string[]> {
     const start = text.lastIndexOf(" ") + 1;
     const event = { text, cursor: text.length, token: text.slice(start), start };
@@ -39,6 +44,7 @@ export class ClaudeCodeSpy {
     process: {
       run: async (argv: string[]) => {
         if (!this.gitStarts) throw new Error(`${argv[0]} could not start`);
+        if (argv[0] === "gh") return { exitCode: 0, stdout: JSON.stringify(this.github), stderr: "" };
         const result = Bun.spawnSync(argv, { cwd: this.cwd });
         return { exitCode: result.exitCode, stdout: result.stdout.toString(), stderr: result.stderr.toString() };
       },

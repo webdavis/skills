@@ -36,6 +36,15 @@ test("the skill's keywords still show in Claude Code when git cannot start", asy
   expect(await claudeCode.typeInPrompt("/git:worktree c")).toEqual(["catchup"]);
 });
 
+test("typing after /git:pr close in Claude Code shows the open pull requests once GitHub has answered", async () => {
+  const { claudeCode } = makeSUT();
+  claudeCode.githubHasOpen({ number: 12, title: "Add the login page", headRefName: "feature-login" });
+
+  expect(await claudeCode.typeInPrompt("/git:pr close 1")).toEqual([]);
+  await Bun.sleep(0);
+  expect(await claudeCode.typeInPrompt("/git:pr close 1")).toEqual(["#12 Add the login page · feature-login"]);
+});
+
 function makeSUT() {
   const repo = new ScratchRepo().branch("feature-a").worktree("feature-b");
   const claudeCode = new ClaudeCodeSpy(repo.path);

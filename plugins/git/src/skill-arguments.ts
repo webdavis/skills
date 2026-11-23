@@ -1,47 +1,61 @@
-export type Values = "names" | "branches";
+export type Values = "worktrees" | "localBranches" | "remoteBranches" | "pullRequests" | "folders";
 
 export interface NextArgument {
   words: string[];
-  values?: Values;
+  values: Values[];
 }
 
-const NOTHING: NextArgument = { words: [] };
+const NOTHING: NextArgument = { words: [], values: [] };
+const BRANCHES: Values[] = ["localBranches", "remoteBranches"];
+const MERGE_METHODS = ["--merge", "--squash", "--rebase"];
+const COMMIT_POLICIES = ["tdd", "guard", "off"];
 
 function unused(flags: string[], earlier: string[]): string[] {
   return flags.filter((flag) => !earlier.includes(flag));
 }
 
 function worktreeDelete(earlier: string[]): NextArgument {
-  if (earlier.length === 1) return { words: [], values: "names" };
-  return { words: unused(["--branch", "--remote"], earlier) };
+  if (earlier.length === 1) return { words: [], values: ["worktrees"] };
+  return { words: unused(["--branch", "--remote"], earlier), values: [] };
 }
 
 function worktreeCatchup(earlier: string[]): NextArgument {
-  if (earlier.at(-1) === "--with") return { words: [], values: "branches" };
+  if (earlier.at(-1) === "--with") return { words: [], values: BRANCHES };
   if (earlier.includes("--with")) return NOTHING;
-  return earlier.length === 1 ? { words: ["--with"], values: "names" } : { words: ["--with"] };
+  return { words: ["--with"], values: earlier.length === 1 ? ["worktrees"] : [] };
 }
 
 function worktree(earlier: string[]): NextArgument {
-  if (earlier.length === 0) return { words: ["list", "delete", "catchup"], values: "names" };
+  if (earlier.length === 0) return { words: ["list", "delete", "catchup"], values: BRANCHES };
   if (earlier[0] === "delete") return worktreeDelete(earlier);
   if (earlier[0] === "catchup") return worktreeCatchup(earlier);
   return NOTHING;
 }
 
-const MERGE_METHODS = ["--merge", "--squash", "--rebase"];
-
 function merge(earlier: string[]): NextArgument {
-  if (earlier.at(-1) === "--policy") return { words: ["merge", "squash", "rebase"] };
+  if (earlier.at(-1) === "--policy") return { words: ["merge", "squash", "rebase"], values: [] };
   const methodGiven = earlier.some((word) => MERGE_METHODS.includes(word));
   const flags = unused(["--keep", ...(methodGiven ? [] : MERGE_METHODS), "--policy"], earlier);
-  return earlier.length === 0 ? { words: flags, values: "branches" } : { words: flags };
+  return { words: flags, values: earlier.length === 0 ? ["pullRequests"] : [] };
+}
+
+function commit(earlier: string[]): NextArgument {
+  if (earlier.length === 0) return { words: ["--policy"], values: [] };
+  if (earlier[0] !== "--policy") return NOTHING;
+  if (earlier.length === 1) return { words: COMMIT_POLICIES, values: ["folders"] };
+  return earlier.length === 2 && COMMIT_POLICIES.includes(earlier[1]!) ? { words: [], values: ["folders"] } : NOTHING;
 }
 
 const SKILLS: Record<string, (earlier: string[]) => NextArgument> = {
-  clean: (earlier) => (earlier.length === 0 ? { words: [], values: "names" } : NOTHING),
   worktree,
+  clean: (earlier) => (earlier.length === 0 ? { words: [], values: ["worktrees", ...BRANCHES] } : NOTHING),
   merge,
+  pr: (earlier) => {
+    if (earlier.length === 0) return { words: ["close"], values: [] };
+    return earlier.length === 1 && earlier[0] === "close" ? { words: [], values: ["pullRequests"] } : NOTHING;
+  },
+  commit,
+  git: (earlier) => (earlier.length === 0 ? { words: ["on", "off"], values: [] } : NOTHING),
 };
 
 export const SKILL_NAMES = Object.keys(SKILLS);

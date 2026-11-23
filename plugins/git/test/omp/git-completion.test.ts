@@ -6,7 +6,7 @@ import { OmpContextSpy } from "../helpers/omp-context-spy.js";
 import { OmpSpy } from "../helpers/omp-spy.js";
 import { ScratchRepo } from "../helpers/scratch-repo.js";
 
-test("a space after /skill:worktree in omp shows its keywords, then the repository's worktrees and branches", async () => {
+test("a space after /skill:worktree in omp shows its keywords, then the branches to make a worktree for", async () => {
   const { context } = await makeSUT();
 
   const suggestions = await context.autocomplete.getSuggestions(["/skill:worktree "], 0, 16);
@@ -15,16 +15,16 @@ test("a space after /skill:worktree in omp shows its keywords, then the reposito
     "list",
     "delete",
     "catchup",
-    "main · worktree",
-    "feature-b · worktree",
     "feature-a · branch",
+    "feature-b · branch",
+    "main · branch",
   ]);
 });
 
-test("typing after /skill:clean in omp narrows the names to those that start with what was typed", async () => {
+test("typing after /skill:clean in omp narrows the names to those that hold what was typed", async () => {
   const { context } = await makeSUT();
 
-  const suggestions = await context.autocomplete.getSuggestions(["/skill:clean feature-a"], 0, 22);
+  const suggestions = await context.autocomplete.getSuggestions(["/skill:clean -a"], 0, 15);
 
   expect(rows(suggestions?.items)).toEqual(["feature-a · branch"]);
 });

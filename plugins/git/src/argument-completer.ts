@@ -1,8 +1,10 @@
+import type { PullRequests } from "./pull-requests.js";
 import type { Repository } from "./repository.js";
 import { nextArgument, type Values } from "./skill-arguments.js";
 
 export interface Suggestion {
   value: string;
+  label?: string;
   description?: string;
 }
 
@@ -11,8 +13,22 @@ export interface Completion {
   suggestions: Suggestion[];
 }
 
-function described(description: string) {
-  return (value: string): Suggestion => ({ value, description });
+interface Candidate {
+  suggestion: Suggestion;
+  searchedText: string[];
+}
+
+function candidate(value: string, description?: string): Candidate {
+  return { suggestion: description ? { value, description } : { value }, searchedText: [value] };
+}
+
+function matching(candidates: Candidate[], word: string): Suggestion[] {
+  const typed = word.toLowerCase();
+  const holds = (text: string) => text.toLowerCase().includes(typed);
+  const startsWith = (text: string) => text.toLowerCase().startsWith(typed);
+  const found = candidates.filter(({ searchedText }) => searchedText.some(holds));
+  const first = found.filter(({ searchedText }) => searchedText.some(startsWith));
+  return [...first, ...found.filter((each) => !first.includes(each))].map(({ suggestion }) => suggestion);
 }
 
 export class ArgumentCompleter {
@@ -20,6 +36,7 @@ export class ArgumentCompleter {
 
   constructor(
     private readonly repository: Repository,
+    private readonly pullRequests: PullRequests,
     commandPrefixes: string[],
   ) {
     const longestFirst = [...commandPrefixes].sort((a, b) => b.length - a.length);
@@ -34,15 +51,28 @@ export class ArgumentCompleter {
     const word = earlier.pop() ?? "";
     const next = nextArgument(skill, earlier);
     if (!next) return undefined;
-    const candidates = [...next.words.map((value) => ({ value })), ...(await this.values(next.values))];
-    return { word, suggestions: candidates.filter((candidate) => candidate.value.startsWith(word)) };
+    const values = (await Promise.all(next.values.map((values) => this.candidates(values)))).flat();
+    const unique = values.filter(
+      (each, index) => values.findIndex((other) => other.suggestion.value === each.suggestion.value) === index,
+    );
+    return { word, suggestions: matching([...next.words.map((value) => candidate(value)), ...unique], word) };
   }
 
-  private async values(values?: Values): Promise<Suggestion[]> {
-    if (values === "branches") return (await this.repository.localBranches()).map(described("branch"));
-    if (values !== "names") return [];
-    const worktrees = await this.repository.worktrees();
-    const otherBranches = (await this.repository.localBranches()).filter((branch) => !worktrees.includes(branch));
-    return [...worktrees.map(described("worktree")), ...otherBranches.map(described("branch"))];
+  private async candidates(values: Values): Promise<Candidate[]> {
+    switch (values) {
+      case "worktrees":
+        return (await this.repository.worktrees()).map((name) => candidate(name, "worktree"));
+      case "localBranches":
+        return (await this.repository.localBranches()).map((name) => candidate(name, "branch"));
+      case "remoteBranches":
+        return (await this.repository.remoteBranches()).map((name) => candidate(name, "GitHub branch"));
+      case "folders":
+        return (await this.repository.folders()).map((name) => candidate(name, "folder"));
+      case "pullRequests":
+        return (await this.pullRequests.open()).map(({ number, title, branch }) => ({
+          suggestion: { value: String(number), label: `#${number} ${title}`, description: branch },
+          searchedText: [String(number), title, branch],
+        }));
+    }
   }
 }

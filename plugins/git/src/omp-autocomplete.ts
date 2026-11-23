@@ -18,7 +18,11 @@ export class OmpAutocomplete {
     if (cursorLine !== 0) return undefined;
     const completion = await this.completer.complete(withSkillChipTyped(lines[0]!.slice(0, cursorCol)));
     if (!completion?.suggestions.length) return undefined;
-    const items = completion.suggestions.map(({ value, description }) => ({ value, label: value, description }));
+    const items = completion.suggestions.map(({ value, label, description }) => ({
+      value,
+      label: label ?? value,
+      description,
+    }));
     return { items, prefix: completion.word };
   }
 
