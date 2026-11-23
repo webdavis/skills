@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import type { AutocompleteItem } from "@oh-my-pi/pi-tui";
+import { skillChipLabel } from "@oh-my-pi/pi-tui/prompt/composer-attachments";
 import gitCompletionExtension from "../../src/git-completion.js";
 import { OmpContextSpy } from "../helpers/omp-context-spy.js";
 import { OmpSpy } from "../helpers/omp-spy.js";
@@ -26,6 +27,17 @@ test("typing after /skill:clean in omp narrows the names to those that start wit
   const suggestions = await context.autocomplete.getSuggestions(["/skill:clean feature-a"], 0, 22);
 
   expect(rows(suggestions?.items)).toEqual(["feature-a · branch"]);
+});
+
+test("a space after the skill chip omp puts in place of /skill:worktree shows the same suggestions", async () => {
+  const { context } = await makeSUT();
+  const chip = `${skillChipLabel("worktree")} `;
+  const typed = "/skill:worktree ";
+
+  const suggestions = await context.autocomplete.getSuggestions([chip], 0, chip.length);
+
+  expect(suggestions).toEqual(await context.autocomplete.getSuggestions([typed], 0, typed.length));
+  expect(suggestions?.items.length).toBeGreaterThan(0);
 });
 
 test("picking a name in omp writes it over the word being typed", async () => {

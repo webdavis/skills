@@ -44,6 +44,8 @@ const SKILLS: Record<string, (earlier: string[]) => NextArgument> = {
   merge,
 };
 
+export const SKILL_NAMES = Object.keys(SKILLS);
+
 export function nextArgument(skill: string, earlier: string[]): NextArgument | undefined {
   return SKILLS[skill]?.(earlier);
 }
