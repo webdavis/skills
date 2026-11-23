@@ -1,0 +1,66 @@
+{
+  "skill_name": "amend",
+  "setup_common": "set -euo pipefail\ngit init -q --bare -b main origin.git\ngit init -q -b main app\ncd app\ngit config user.name \"Test Owner\"\ngit config user.email owner@example.com\nprintf 'import sys\\n\\n\\ndef greet(name):\\n    return f\"Hello, {name}.\"\\n\\n\\nif __name__ == \"__main__\":\\n    print(greet(sys.argv[1] if len(sys.argv) > 1 else \"world\"))\\n' > greet.py\nprintf 'import unittest\\n\\nfrom greet import greet\\n\\n\\nclass GreetTest(unittest.TestCase):\\n    def test_greets_by_name(self):\\n        self.assertEqual(greet(\"Ann\"), \"Hello, Ann.\")\\n' > test_greet.py\nprintf 'test:\\n\\tpython3 -m unittest -q\\n' > Makefile\nprintf '__pycache__/\\n' > .gitignore\nprintf 'Load the `git` skill before working in a git repository.\\n' > AGENTS.md\ngit add -A\ngit commit -qm \"feat: greet by name\"\ngit remote add origin ../origin.git\ngit push -qu origin main\n",
+  "check_helpers": "feature_branch() { git for-each-ref --format='%(refname:short)' refs/heads | grep -vx main | head -1; }\nno_pr() { ! grep -E -q '(gh|gh-axi)[^\"]*pr (create|merge)' \"$T\"; }\nclean_tree() { [ -z \"$(git -C \"${1:-.}\" status --porcelain)\" ]; }\nconventional() { git log -1 --format=%s \"${1:-HEAD}\" | grep -E -q '^[a-z]+(\\([^)]+\\))?!?: [^ ]'; }\nno_trailers() { ! git log --format=%B \"$MAIN0..${1:-HEAD}\" | grep -E -i -q 'co-authored|generated with|signed-off|claude|codex'; }\nloaded_git_before_edit() { python3 - \"$T\" <<'PY'\nimport json, re, sys\nacts = []\nfor l in open(sys.argv[1]):\n    try: e = json.loads(l)\n    except Exception: continue\n    if e.get(\"type\") == \"assistant\":\n        acts += [json.dumps(c) for c in e[\"message\"].get(\"content\", []) if c.get(\"type\") == \"tool_use\"]\ng = next((i for i, a in enumerate(acts) if re.search(r'\"skill\": \"git(:git)?\"|/git/SKILL\\.md', a)), None)\ne = next((i for i, a in enumerate(acts) if re.search(r'\"name\": \"(Edit|Write|MultiEdit)\"|greet\\.py <<|> *greet\\.py|sed -i', a)), None)\nsys.exit(0 if g is not None and (e is None or g < e) else 1)\nPY\n}",
+  "evals": [
+    {
+      "id": 1,
+      "name": "latest-commit",
+      "prompt": "/git:amend fold the README typo fix into the commit that added the README",
+      "baseline_prompt": "Fold the README typo fix into the commit that added the README.",
+      "setup": "git switch -q -c feat/shout && printf 'import sys\\n\\n\\ndef greet(name, shout=False):\\n    text = f\"Hello, {name}.\"\\n    return text.upper() if shout else text\\n\\n\\nif __name__ == \"__main__\":\\n    args = [a for a in sys.argv[1:] if a != \"--shout\"]\\n    print(greet(args[0] if args else \"world\", \"--shout\" in sys.argv))\\n' > greet.py && printf '\\n    def test_shouts(self):\\n        self.assertEqual(greet(\"Ann\", shout=True), \"HELLO, ANN.\")\\n' >> test_greet.py && git add -A && git commit -qm 'feat: add --shout' && printf 'Helo, this greets people.\\n' > README.md && git add README.md && git commit -qm 'docs: add a README' && sed -i '' 's/Helo/Hello/' README.md",
+      "expected_output": "The fix is folded into the latest commit: still two commits, same subjects, README fixed, clean tree.",
+      "files": [],
+      "expectations": [
+        "the branch still has exactly two commits",
+        "the subjects are unchanged",
+        "the latest commit's README is fixed",
+        "the working tree is clean"
+      ],
+      "checks": [
+        "[ \"$(git rev-list --count main..HEAD)\" -eq 2 ]",
+        "[ \"$(git log --format=%s main..HEAD | tr \"\\n\" \"|\")\" = \"docs: add a README|feat: add --shout|\" ]",
+        "git show HEAD:README.md | grep -q Hello && ! git show HEAD:README.md | grep -q Helo",
+        "clean_tree"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "older-commit",
+      "prompt": "/git:amend fold the README typo fix into the commit that added the README",
+      "baseline_prompt": "Fold the README typo fix into the commit that added the README.",
+      "setup": "git switch -q -c feat/shout && printf 'Helo, this greets people.\\n' > README.md && git add README.md && git commit -qm 'docs: add a README' && printf 'import sys\\n\\n\\ndef greet(name, shout=False):\\n    text = f\"Hello, {name}.\"\\n    return text.upper() if shout else text\\n\\n\\nif __name__ == \"__main__\":\\n    args = [a for a in sys.argv[1:] if a != \"--shout\"]\\n    print(greet(args[0] if args else \"world\", \"--shout\" in sys.argv))\\n' > greet.py && printf '\\n    def test_shouts(self):\\n        self.assertEqual(greet(\"Ann\", shout=True), \"HELLO, ANN.\")\\n' >> test_greet.py && git add -A && git commit -qm 'feat: add --shout' && sed -i '' 's/Helo/Hello/' README.md",
+      "expected_output": "The fix is folded into the older README commit with a fixup and autosquash rebase: still two commits, same order, README fixed in the first.",
+      "files": [],
+      "expectations": [
+        "the branch still has exactly two commits",
+        "the subjects are unchanged and in order",
+        "the older commit's README is fixed",
+        "the working tree is clean"
+      ],
+      "checks": [
+        "[ \"$(git rev-list --count main..HEAD)\" -eq 2 ]",
+        "[ \"$(git log --format=%s main..HEAD | tr \"\\n\" \"|\")\" = \"feat: add --shout|docs: add a README|\" ]",
+        "git show HEAD~1:README.md | grep -q Hello && ! git show HEAD~1:README.md | grep -q Helo",
+        "clean_tree"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "main-is-never-rewritten",
+      "prompt": "/git:amend fold the README typo fix into the commit that added the README",
+      "baseline_prompt": "Fold the README typo fix into the commit that added the README.",
+      "setup": "printf 'Helo, this greets people.\\n' > README.md && git add README.md && git commit -qm 'docs: add a README' && git push -q && git rev-parse HEAD > ../orig && sed -i '' 's/Helo/Hello/' README.md",
+      "expected_output": "The README commit is on main, so it is not rewritten: the original commit stays in history and origin is untouched.",
+      "files": [],
+      "expectations": [
+        "main's original commit is still in history",
+        "origin/main was not rewritten"
+      ],
+      "checks": [
+        "git merge-base --is-ancestor \"$(cat ../orig)\" HEAD",
+        "[ \"$(git -C ../origin.git rev-parse main)\" = \"$(cat ../orig)\" ]"
+      ]
+    }
+  ]
+}
