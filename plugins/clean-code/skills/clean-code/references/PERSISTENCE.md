@@ -1,6 +1,6 @@
 # Persistence, delivery safety, and configuration
 
-Where durable state lives and how it survives a crash. Reference for [`SKILL.md`](SKILL.md).
+Where durable state lives and how it survives a crash. Reference for [`SKILL.md`](../SKILL.md).
 
 ## Classify the state before choosing a store
 

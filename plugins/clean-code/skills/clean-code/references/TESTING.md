@@ -1,6 +1,6 @@
 # Testing
 
-What counts as proof, and what only looks like it. Reference for [`SKILL.md`](SKILL.md). Use the
+What counts as proof, and what only looks like it. Reference for [`SKILL.md`](../SKILL.md). Use the
 narrowest reliable test level.
 
 ## Two kinds of work, two obligations
