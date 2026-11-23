@@ -44,3 +44,11 @@ hermes skills install webdavis/skills/plugins/clean-code/skills/clean-code
 hermes skills install webdavis/skills/plugins/tiktok-crawling/skills/tiktok-crawling
 hermes skills install webdavis/skills/plugins/git/skills/conventional-commits
 ```
+
+## Turning on the `git` plugin's rules
+
+Copy this line into an `AGENTS.md` (or `CLAUDE.md`) so agents load the `git` skill before any work:
+
+```
+Load the `git` skill before working in a git repository.
+```
