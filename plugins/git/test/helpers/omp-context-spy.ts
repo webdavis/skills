@@ -5,12 +5,20 @@ type ProviderFactory = (current: AutocompleteProvider) => AutocompleteProvider;
 export class OmpContextSpy {
   readonly ompsOwn: AutocompleteProvider;
   private provider: AutocompleteProvider;
+  private readonly statuses = new Map<string, string | undefined>();
 
   readonly ui = {
     addAutocompleteProvider: (factory: ProviderFactory): void => {
       this.provider = factory(this.provider);
     },
+    setStatus: (key: string, text: string | undefined): void => {
+      this.statuses.set(key, text);
+    },
   };
+
+  get statusLine(): (string | undefined)[] {
+    return [...this.statuses.values()];
+  }
 
   constructor(readonly cwd: string) {
     this.ompsOwn = new CombinedAutocompleteProvider([{ name: "commit" }, { name: "worktree" }], cwd);
