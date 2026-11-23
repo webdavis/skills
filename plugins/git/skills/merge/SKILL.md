@@ -1,5 +1,5 @@
 ---
-name: pr-merge
+name: merge
 description: Merge the current branch's pull request with a merge commit through gh-axi, delete the branch, and return to the base branch.
 allowed-tools:
   - Bash(git rev-parse:*)
@@ -13,7 +13,7 @@ allowed-tools:
   - Bash(wt:*)
 ---
 
-# PR Merge
+# Merge
 
 Merge the current PR with a merge commit, delete the remote branch, switch back to the base branch,
 and pull latest. Every GitHub operation runs through `npx -y gh-axi`; the bare `gh` CLI is never

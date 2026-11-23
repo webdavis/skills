@@ -97,6 +97,6 @@ Report the pull request number and URL.
 
 - Never post an unreviewed body. If the review step was skipped, redo it before creating anything.
 - Never invoke `gh` directly for any of this, and never allowlist it.
-- Bail rather than pushing on the operator's behalf; use `/commit-push-pr` when the branch still
-  needs a commit or a push.
+- Bail rather than pushing on the operator's behalf; commit with `/commit` and push the branch
+  first.
 - Do not merge the pull request. Opening it is where this command stops.
